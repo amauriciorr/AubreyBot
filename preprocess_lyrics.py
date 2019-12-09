@@ -2,7 +2,9 @@ import json
 import pandas as pd
 import argparse
 import lyricsgenius
+import datetime as dt
 from lyricsgenius.api import *
+from lyricsgenius.utils import sanitize_filename
 from genius_keys import GENIUS_ACCESS_TOKEN
 
 
@@ -105,7 +107,9 @@ def force_search_artist(genius_obj, artist_name, sleep_time=600, max_songs=None,
                         break
                 else:
                     continue
-        except requests.exceptions.ReadTimeout as e:
+        # temporarily stop API requests when encountering a timeout or when
+        # there's 
+        except (requests.exceptions.ReadTimeout, TypeError) as e:
             print('Encountered the following error: ')
             print(e)
             print('Sleeping for {} seconds... '.format(sleep_time))
@@ -136,15 +140,24 @@ def get_and_process_songs():
                         help="Path to load artist lyrics JSON.")
     args = parser.parse_args()
 
-    if not args.skip_download:
+    stock_filename = 'Lyrics_' + args.artist_name.replace(' ', '') + '.json'
+    stock_filename = sanitize_filename(stock_filename)
+
+    if args.skip_download:
+
+    else:
+        start = dt.datetime.now()
+        print('{}| Beginning download'.format(start))
         genius = lyricsgenius.Genius(GENIUS_ACCESS_TOKEN, sleep_time=1)
         artist_tracks = force_search_artist(genius, args.artist_name, sleep_time=600, max_songs=None,
                                              sort='popularity', per_page=20,
                                              get_full_info=True,
                                              allow_name_change=True)
+        print('{}| Finished download in {}'.format(dt.datetime.now(), (dt.datetime.now() - start)))
         artist_tracks.save_lyrics()
+        
+
 
 if __name__ == "__main__":
     get_and_process_songs()
-
 
