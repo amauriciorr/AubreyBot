@@ -144,6 +144,16 @@ def get_and_process_songs():
     stock_filename = sanitize_filename(stock_filename)
 
     if args.skip_download:
+        '''
+        TO ADD
+        AFTER WRITING OR IN CASE OF LOADING JSON LYRICS FILE, SPECIFY FILE PATH.
+        1) LOAD JSON
+        2) CREATE COUNTS
+        3) CREATE DICTIONARY() CLASS OBJECT
+        4) CREATE TEXT-LABEL JSON FILE TO BE USED FOR NEXT STEP
+        5) CREATE DATASET() CLASS OBJECT
+        6) TRAINING MODEL PORTION
+        '''
 
     else:
         start = dt.datetime.now()
