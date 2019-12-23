@@ -6,6 +6,7 @@ import datetime as dt
 from lyricsgenius.api import *
 from lyricsgenius.utils import sanitize_filename
 from genius_keys import GENIUS_ACCESS_TOKEN
+from utils import * 
 
 
 # rewriting / overwriting some of the existing functions in lyricsgenius package
@@ -144,6 +145,8 @@ def get_and_process_songs():
     stock_filename = sanitize_filename(stock_filename)
 
     if args.skip_download:
+
+        genius_file = read_json('./'+stock_filename)
         '''
         TO ADD
         AFTER WRITING OR IN CASE OF LOADING JSON LYRICS FILE, SPECIFY FILE PATH.
@@ -165,6 +168,7 @@ def get_and_process_songs():
                                              allow_name_change=True)
         print('{}| Finished download in {}'.format(dt.datetime.now(), (dt.datetime.now() - start)))
         artist_tracks.save_lyrics()
+        genius_file = read_json('./'+stock_filename)
         
 
 

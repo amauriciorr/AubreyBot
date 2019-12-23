@@ -1,10 +1,25 @@
 import re
+import json
+import jsonlines
 import pickle as pkl
 from collections import defaultdict
+from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
+import torch
 
 
 RETOK = re.compile(r'\w+|[^\w\s\[\]]|\n', re.UNICODE)
 SONG_PART_REGEX = re.compile(r'\[\w+\W?\s?\w*\d?\]', re.UNICODE)
+
+def read_json(file_path):
+    with open(file_path, 'r') as f:
+        json_file = json.load(f)
+    return json_file
+
+def write_jsonl(file_path, dict_obj):
+    with jsonlines.open(file_path, 'w') as f:
+        f.write_all(dict_obj)
+
 
 def create_counts_dict(lyrics_file, regex):
     '''
@@ -29,25 +44,32 @@ def get_all_lyrics(lyrics_file, regex):
         all_lyrics.append(lyrics)
     return all_lyrics
 
-def create_text_and_target(song):
+def create_text_and_target(songs, num_songs, split=0.8):
+    split_idx = int(num_songs * 0.8)
+    train_text_and_targets = []
+    valid_text_and_targets = []
 
-    text_and_target_dict = {}
-    song = song.split('\n')
-    # 0-index refers to song-part designation that was replaced
-    # by empty string, i.e. [INTRO]
-    base_lyric = song[1]
-    for lyric in song[2:]:
-        if lyric:
-            text_and_target_dict[base_lyric] = lyric
-            base_lyric += ('\n ' + lyric)
+    for idx, song in enumerate(songs):
+        song = song.split('\n')
+        # 0-index refers to song-part designation, i.e. [INTRO],
+        # that was replaced with empty string
+        base_lyric = song[1]
+        for lyric in song[2:]:
+            text_and_target = {}
+            if lyric:
+                if idx < split_idx:
+                    text_and_target['text'] = base_lyric
+                    text_and_target['labels'] = [lyric]
+                    train_text_and_targets.append(text_and_target)
+                else:
+                    text_and_target['text'] = base_lyric
+                    text_and_target['eval_labels'] = [lyric]
+                    valid_text_and_targets.append(text_and_target)
 
-    '''
-    TO DO 
-    LOOK AT PERSONACHAT JSON FILE
-    MAKE SAME KEY-VALUE PAIR STRUCTURE HERE
-    '''
+                base_lyric += ('\n ' + lyric)
 
-    return text_and_target_dict
+    write_jsonl('./train_lyrics.jsonl', train_text_and_targets)
+    write_jsonl('./valid_lyrics.jsonl', valid_text_and_targets)
 
 class ChatDictionary(object):
     """
@@ -86,13 +108,12 @@ class ChatDictionary(object):
     def __len__(self):
         return len(self.counts)
 
-
 class ChatDataset(Dataset):
     """
     Json dataset wrapper
     """
     
-    def __init__(self, dataset_file_path, dictionary):
+    def __init__(self, dataset_file_path, dictionary, dt='train'):
         super().__init__()
         
         json_text = open(dataset_file_path, 'r').readlines()
@@ -105,8 +126,13 @@ class ChatDataset(Dataset):
             _inp_toked_id = dictionary.t2v(_inp_toked)
 
             sample['text_vec'] = torch.tensor(_inp_toked_id, dtype=torch.long)
-
-            _tar_toked = RETOK.findall(sample['labels'][0]) + ['__end__']
+            
+            # train and valid have different key names for target
+            if dt == 'train':
+                _tar_toked = RETOK.findall(sample['labels'][0]) + ['__end__']
+            elif dt == 'valid':
+                _tar_toked = RETOK.findall(sample['eval_labels'][0]) + ['__end__']
+                
             _tar_toked_id = dictionary.t2v(_tar_toked)
             
             sample['target_vec'] = torch.tensor(_tar_toked_id, dtype=torch.long)
