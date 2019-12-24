@@ -4,4 +4,6 @@ from processing_utils import *
 
 
 if __name__ == "__main__":
-    get_and_process_songs()
+    preprocess_args = get_setup_args()
+    get_and_process_songs(preprocess_args)
+

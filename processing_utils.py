@@ -205,6 +205,7 @@ def get_and_process_songs(args):
 
     genius_file = read_json('./'+stock_filename)    
     word_counts = create_counts_dict(genius_file, RETOK)
+    pkl.dump(word_counts, open('word_counts_dict.p','wb'))
     artist_lyrics = get_lyrics_from_json(genius_file, SONG_PART_REGEX)
     create_text_and_target(artist_lyrics, len(artist_lyrics))
 
@@ -212,10 +213,8 @@ def get_and_process_songs(args):
         '''
         TO ADD
         AFTER WRITING OR IN CASE OF LOADING JSON LYRICS FILE, SPECIFY FILE PATH.
-        1) LOAD JSON
-        2) CREATE COUNTS
-        3) CREATE DICTIONARY() CLASS OBJECT
-        4) CREATE TEXT-LABEL JSON FILE TO BE USED FOR NEXT STEP
-        5) CREATE DATASET() CLASS OBJECT
-        6) TRAINING MODEL PORTION
+        1) FORMAT COUNT DICT SAME AS DICT INPUT FOR ChatDictionary() CLASS
+        2) CREATE DATASET() CLASS OBJECT; i.e. instance of ChatDataset() CLASS
+        2.5) ADD ABOVE 2 AS PRE-SAVED FILES FOR SKIPPING DOWNLOAD/PREPROCESS SET???
+        3) TRAINING MODEL PORTION
         '''
