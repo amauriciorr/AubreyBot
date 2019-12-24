@@ -2,8 +2,6 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-
-
 class ChatDictionary(object):
     """
     Simple dict loader

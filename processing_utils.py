@@ -23,7 +23,6 @@ def write_jsonl(file_path, dict_obj):
     with jsonlines.open(file_path, 'w') as f:
         f.write_all(dict_obj)
 
-
 def create_counts_dict(json_file, regex):
     '''
     function for determining frequency of occurrence 
@@ -74,8 +73,6 @@ def create_text_and_target(songs, num_songs, split=0.8):
     write_jsonl('./train_lyrics.jsonl', train_text_and_targets)
     write_jsonl('./valid_lyrics.jsonl', valid_text_and_targets)
 
-def 
-
 # rewriting / overwriting some of the existing functions in lyricsgenius package
 def find_artist_id(search_term, genius_obj):
     if genius_obj.verbose:
@@ -94,7 +91,6 @@ def find_artist_id(search_term, genius_obj):
 
     # Assume the top search result is the intended artist
     return found_artist['id']
-
 
 def force_search_artist(genius_obj, artist_name, sleep_time=600, max_songs=None,
                   sort='popularity', per_page=20,
@@ -192,28 +188,27 @@ def force_search_artist(genius_obj, artist_name, sleep_time=600, max_songs=None,
         print('Done. Found {n} songs.'.format(n=artist.num_songs))
     return artist
 
-
-def get_and_process_songs():
-    parser = argparse.ArgumentParser('Download and pre-process rap lyrics')
-    parser.add_argument("--artist_name",
-                        type=str,
-                        help="Name of rapper to get lyrics for.")
-    parser.add_argument("--skip_download",
-                        type=lambda s: s.lower().startswith('t'),
-                        default=False,
-                        help="If lyrics JSON file already created, avoid downloading and start with building vocab and tokenizing.")
-    parser.add_argument("--load_path",
-                        type=str,
-                        default=None,
-                        help="Path to load artist lyrics JSON.")
-    args = parser.parse_args()
-
+def get_and_process_songs(args):
     stock_filename = 'Lyrics_' + args.artist_name.replace(' ', '') + '.json'
     stock_filename = sanitize_filename(stock_filename)
 
-    if args.skip_download:
+    if args.download_lyrics:
+        start = dt.datetime.now()
+        print('{}| Beginning download'.format(start))
+        genius = lyricsgenius.Genius(GENIUS_ACCESS_TOKEN, sleep_time=1)
+        artist_tracks = force_search_artist(genius, args.artist_name, sleep_time=600, max_songs=None,
+                                             sort='popularity', per_page=20,
+                                             get_full_info=True,
+                                             allow_name_change=True)
+        print('{}| Finished download in {}'.format(dt.datetime.now(), (dt.datetime.now() - start)))
+        artist_tracks.save_lyrics()
 
-        genius_file = read_json('./'+stock_filename)
+    genius_file = read_json('./'+stock_filename)    
+    word_counts = create_counts_dict(genius_file, RETOK)
+    artist_lyrics = get_lyrics_from_json(genius_file, SONG_PART_REGEX)
+    create_text_and_target(artist_lyrics, len(artist_lyrics))
+
+
         '''
         TO ADD
         AFTER WRITING OR IN CASE OF LOADING JSON LYRICS FILE, SPECIFY FILE PATH.
@@ -224,16 +219,3 @@ def get_and_process_songs():
         5) CREATE DATASET() CLASS OBJECT
         6) TRAINING MODEL PORTION
         '''
-
-    else:
-        start = dt.datetime.now()
-        print('{}| Beginning download'.format(start))
-        genius = lyricsgenius.Genius(GENIUS_ACCESS_TOKEN, sleep_time=1)
-        artist_tracks = force_search_artist(genius, args.artist_name, sleep_time=600, max_songs=None,
-                                             sort='popularity', per_page=20,
-                                             get_full_info=True,
-                                             allow_name_change=True)
-        print('{}| Finished download in {}'.format(dt.datetime.now(), (dt.datetime.now() - start)))
-        artist_tracks.save_lyrics()
-        genius_file = read_json('./'+stock_filename)
-        
