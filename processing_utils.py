@@ -208,13 +208,3 @@ def get_and_process_songs(args):
     pkl.dump(word_counts, open('word_counts_dict.p','wb'))
     artist_lyrics = get_lyrics_from_json(genius_file, SONG_PART_REGEX)
     create_text_and_target(artist_lyrics, len(artist_lyrics))
-
-
-        '''
-        TO ADD
-        AFTER WRITING OR IN CASE OF LOADING JSON LYRICS FILE, SPECIFY FILE PATH.
-        1) FORMAT COUNT DICT SAME AS DICT INPUT FOR ChatDictionary() CLASS
-        2) CREATE DATASET() CLASS OBJECT; i.e. instance of ChatDataset() CLASS
-        2.5) ADD ABOVE 2 AS PRE-SAVED FILES FOR SKIPPING DOWNLOAD/PREPROCESS SET???
-        3) TRAINING MODEL PORTION
-        '''
