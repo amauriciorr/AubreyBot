@@ -13,12 +13,11 @@ class ChatDictionary(object):
         self.ind2word = {}  # index:word
         self.counts = {}  # word:count
 
-        dict_raw = open(dict_file_path, 'r').readlines()
+        # dict_raw = open(dict_file_path, 'r').readlines()
+        dict_raw = pkl.load(open(dict_file_path, 'rb'))
         
-        for i, w in enumerate(dict_raw):
-            _word, _count = w.strip().split('\t')
-            if _word == '\\n':
-                _word = '\n'
+        for i, kvp in enumerate(dict_raw.items()):
+            _word, _count = kvp
             self.word2ind[_word] = i
             self.ind2word[i] = _word
             self.counts[_word] = _count
