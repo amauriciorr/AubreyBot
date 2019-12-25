@@ -76,3 +76,11 @@ class ChatDataset(Dataset):
     
     def __len__(self):
         return len(self.samples)
+
+class NeuralNetTrainer(train_dataset, valid_dataset):
+    pass
+
+"""
+FIGURE OUT HOW BLEU SCORE WORKS
+
+"""
