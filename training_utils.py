@@ -80,7 +80,7 @@ class ChatDataset(Dataset):
 class NeuralNetTrainer(train_dataset, valid_dataset):
     pass
 
+
 """
 FIGURE OUT HOW BLEU SCORE WORKS
-
 """
