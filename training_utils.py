@@ -1,8 +1,10 @@
-from tqdm import tqdm
 import json
 import torch
 import pickle as pkl
+import torch.nn as nn
+from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 class ChatDictionary(object):
     """
@@ -76,6 +78,232 @@ class ChatDataset(Dataset):
     
     def __len__(self):
         return len(self.samples)
+
+def pad_tensor(tensors, sort=True, pad_token=0):
+    '''
+    function to extend/pad with <pad_token> any tensors shorter than max-length
+    tensor, as sequence tensors are going to be of varying length
+    '''
+    rows = len(tensors)
+    lengths = [len(i) for i in tensors]
+    max_t = max(lengths)
+        
+    output = tensors[0].new(rows, max_t)
+    output.fill_(pad_token)  # 0 is a pad token here
+    
+    for i, (tensor, length) in enumerate(zip(tensors, lengths)):
+        output[i,:length] = tensor
+
+    return output, lengths
+
+def argsort(keys, *lists, descending=False):
+    '''
+    Reorder each list in *lists by the sorted order of keys,
+    either descending or ascending.
+    :param iter keys: Keys to order by.
+    :param list[list] lists: Lists to reorder by keys's new order.
+                             Correctly handles lists and 1-D tensors.
+    :param bool descending: Use descending order if true.
+    :returns: The reordered items.
+    '''
+    ind_sorted = sorted(range(len(keys)), key=lambda k: keys[k])
+    if descending:
+        ind_sorted = list(reversed(ind_sorted))
+    output = []
+    for lst in lists:
+        if isinstance(lst, torch.Tensor):
+            output.append(lst[ind_sorted])
+        else:
+            output.append([lst[i] for i in ind_sorted])
+    return output
+
+def batchify(batch):
+    '''
+    batch function to be applied to tensors in training loop
+    '''
+    inputs = [i[0] for i in batch]
+    labels = [i[1] for i in batch]
+    
+    input_vecs, input_lens = pad_tensor(inputs)
+    label_vecs, label_lens = pad_tensor(labels)
+    
+    # sort only wrt inputs here for encoder packinng
+    input_vecs, input_lens, label_vecs, label_lens = argsort(input_lens, input_vecs, input_lens, label_vecs,\
+                                                             label_lens, descending=True)
+
+    return {
+        "text_vecs": input_vecs,
+        "text_lens": input_lens,
+        "target_vecs": label_vecs,
+        "target_lens": label_lens,
+        'use_packed': True
+    }
+
+
+class EncoderRNN(nn.Module):
+    """Encodes the input context."""
+
+    def __init__(self, vocab_size, embed_size, hidden_size, num_layers, pad_idx=0, dropout=0, shared_lt=None):
+        super().__init__()
+        self.vocab_size = vocab_size
+        self.embed_size = embed_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.dropout = nn.Dropout(p=dropout)
+        self.pad_idx = pad_idx
+        
+        if shared_lt is None:
+            self.embedding = nn.Embedding(self.vocab_size, self.embed_size, pad_idx)
+        else:
+            self.embedding = shared_lt
+            
+        self.gru = nn.GRU(
+            self.embed_size, self.hidden_size, num_layers=self.num_layers, batch_first=True, dropout=dropout if num_layers > 1 else 0,
+        )
+        
+        
+    def forward(self, text_vec, text_lens, hidden=None, use_packed=True):
+        embedded = self.embedding(text_vec)
+        attention_mask = text_vec.ne(self.pad_idx)
+
+        embedded = self.dropout(embedded)
+        if use_packed is True:
+            embedded = pack_padded_sequence(embedded, text_lens, batch_first=True)
+        output, hidden = self.gru(embedded, hidden)
+        if use_packed is True:
+            output, output_lens = pad_packed_sequence(output, batch_first=True)
+        
+        return output, hidden, attention_mask
+
+    
+class DecoderRNN(nn.Module):
+    """Generates a sequence of tokens in response to context."""
+
+    def __init__(self, vocab_size, embed_size, hidden_size, num_layers, dropout=0):
+        super().__init__()
+        self.vocab_size = vocab_size
+        self.embed_size = embed_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.dropout = nn.Dropout(p=dropout)
+        
+        self.embedding = nn.Embedding(self.vocab_size, self.embed_size, 0)
+        
+        self.gru = nn.GRU(
+            self.embed_size, self.hidden_size, num_layers=self.num_layers, batch_first=True, dropout=dropout if num_layers > 1 else 0,
+        )
+        
+        self.attention = AttentionLayer(self.hidden_size, self.embed_size)
+
+        self.out = nn.Linear(self.hidden_size, self.vocab_size)
+        self.longest_label = 100
+
+    def forward(self, text_vec, decoder_hidden, encoder_states):
+        emb = self.embedding(text_vec)
+        emb = self.dropout(emb)
+        seqlen = text_vec.size(1)
+        encoder_output, encoder_hidden, attention_mask = encoder_states
+        
+        decoder_hidden = decoder_hidden
+        output = []
+        attn_w_log = []
+
+        for i in range(seqlen):
+            decoder_output, decoder_hidden = self.gru(emb[:,i,:].unsqueeze(1), decoder_hidden)
+            
+            # compute attention at each time step
+            decoder_output_attended, attn_weights = self.attention(decoder_output, decoder_hidden, encoder_output, attention_mask)
+            output.append(decoder_output_attended)
+            attn_w_log.append(attn_weights)
+            
+        output = torch.cat(output, dim=1).to(text_vec.device)
+        scores = self.out(output)
+        
+        return scores, decoder_hidden, attn_w_log
+    
+    def decode_forced(self, ys, encoder_states, xs_lens):
+        encoder_output, encoder_hidden, attention_mask = encoder_states
+        
+        batch_size = ys.size(0)
+        target_length = ys.size(1)
+        longest_label = max(target_length, self.longest_label)
+        
+        starts = torch.Tensor([1]).long().to(self.embedding.weight.device).expand(batch_size, 1).long()  # expand to batch size
+        
+        # Teacher forcing: Feed the target as the next input
+        y_in = ys.narrow(1, 0, ys.size(1) - 1)
+        decoder_input = torch.cat([starts, y_in], 1)
+        decoder_output, decoder_hidden, attn_w_log = self.forward(decoder_input, encoder_hidden, encoder_states)
+        _, preds = decoder_output.max(dim=2)
+        
+        return decoder_output, preds, attn_w_log
+    
+    
+class AttentionLayer(nn.Module):
+
+    def __init__(self, hidden_size, embedding_size):
+        super().__init__()
+        input_dim = hidden_size
+
+        self.linear_out = nn.Linear(hidden_size+input_dim, input_dim, bias=False)
+        self.softmax = nn.Softmax(dim=-1)
+        self.tanh = nn.Tanh()
+
+    def forward(self, decoder_output, decoder_hidden, encoder_output, attention_mask):
+
+        batch_size, seq_length, hidden_size = encoder_output.size()
+
+        encoder_output_t = encoder_output.transpose(1,2)
+        
+        attention_scores = torch.bmm(decoder_output, encoder_output_t).squeeze(1)
+
+        attention_scores.masked_fill_((~attention_mask), -10e5)
+        attention_weights = self.softmax(attention_scores)
+
+        mix = torch.bmm(attention_weights.unsqueeze(1), encoder_output)
+
+        combined = torch.cat((decoder_output.squeeze(1), mix.squeeze(1)), dim=1)
+
+        output = self.linear_out(combined).unsqueeze(1)
+        output = self.tanh(output)
+
+        return output, attention_weights
+    
+    
+class seq2seq(nn.Module):
+    """
+    Generic seq2seq model with attention mechanism.
+    """
+    def __init__(self, opts):
+
+        super().__init__()
+        self.opts = opts
+        
+        self.decoder = DecoderRNN(
+                                    vocab_size=self.opts['vocab_size'],
+                                    embed_size=self.opts['embedding_size'],
+                                    hidden_size=self.opts['hidden_size'],
+                                    num_layers=self.opts['num_layers_dec'],
+                                    dropout=self.opts['dropout'],
+                                )
+        
+        self.encoder = EncoderRNN(
+                                    vocab_size=self.opts['vocab_size'],
+                                    embed_size=self.opts['embedding_size'],
+                                    hidden_size=self.opts['hidden_size'],
+                                    num_layers=self.opts['num_layers_enc'],
+                                    dropout=self.opts['dropout'],
+                                    shared_lt=self.decoder.embedding
+        )
+        
+    def train(self):
+        self.encoder.train()
+        self.decoder.train()
+        
+    def eval(self):
+        self.encoder.eval()
+        self.decoder.eval()
+
 
 class NeuralNetTrainer(train_dataset, valid_dataset):
     pass
