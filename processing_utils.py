@@ -6,10 +6,9 @@ import pickle as pkl
 import datetime as dt
 import lyricsgenius
 from lyricsgenius.api import *
-from lyricsgenius.utils import sanitize_filename
-from genius_keys import GENIUS_ACCESS_TOKEN
 from collections import defaultdict
-
+from genius_keys import GENIUS_ACCESS_TOKEN
+from lyricsgenius.utils import sanitize_filename
 
 RETOK = re.compile(r'\w+|[^\w\s\[\]]|\n', re.UNICODE)
 SONG_PART_REGEX = re.compile(r'\[\w+\W?\s?\w*\d?\]', re.UNICODE)
@@ -73,8 +72,13 @@ def create_text_and_target(songs, num_songs, split=0.8):
     write_jsonl('./train_lyrics.jsonl', train_text_and_targets)
     write_jsonl('./valid_lyrics.jsonl', valid_text_and_targets)
 
-# rewriting / overwriting some of the existing functions in lyricsgenius package
 def find_artist_id(search_term, genius_obj):
+    # rewriting / overwriting some of the existing functions in lyricsgenius package
+    '''
+    Function for simply returning aassociated artist_id
+    :param search_term: Artist name to search for
+    :param genius_obj: lyricgenius object instance used to make API call
+    '''
     if genius_obj.verbose:
         print('Retrieving artist ID for {0}...\n'.format(search_term))
 
