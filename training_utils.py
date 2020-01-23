@@ -1,10 +1,14 @@
 import json
 import torch
+import datetime as dt
 import pickle as pkl
 import torch.nn as nn
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
+EPOCH_LOG = '{} | Epoch {} / {}'
+STEP_LOG = '{} | Step {} / {}'
 
 class ChatDictionary(object):
     """
@@ -132,13 +136,19 @@ def batchify(batch):
                                                              label_lens, descending=True)
 
     return {
-        "text_vecs": input_vecs,
-        "text_lens": input_lens,
-        "target_vecs": label_vecs,
-        "target_lens": label_lens,
+        'text_vecs': input_vecs,
+        'text_lens': input_lens,
+        'target_vecs': label_vecs,
+        'target_lens': label_lens,
         'use_packed': True
     }
 
+
+'''
+***
+REMEMBER: REACH OUT TO PROF. CHO OR TAs TO CONSULT ON BEST WAY TO CITE THEIR WORK
+***
+'''
 
 class EncoderRNN(nn.Module):
     """Encodes the input context."""
@@ -304,10 +314,96 @@ class seq2seq(nn.Module):
         self.encoder.eval()
         self.decoder.eval()
 
+def build_dataloader(dataset, collate_func, batch_size, shuffle=True):
+    loader = DataLoader(dataset, shuffle, collate_func, batch_size)
+    return loader
 
-class NeuralNetTrainer(train_dataset, valid_dataset):
+'''
+***
+
+ANTICIPATE HAVING TO REWRITE BELOW TO FEED ARGS PARAM TO INITIATE CLASS
+I.E. seq2seqTrainer(training_Args) 
+MAYBE???
+***
+'''
+class seq2seqTrainer(object):
+    def __init__(self, model, train_dataloader, valid_dataloader, loss, optimizer,
+                 learning_rate, with_cuda, num_epochs):
+        self.model = model
+        self.train_dataloader = train_dataloader
+        self.valid_dataloader = valid_dataloader
+        self.loss = loss
+        self.optimizer = optimizer
+        self.learning_rate = learning_rate
+        self.with_cuda = with_cuda
+        self.num_epochs = num_epochs
+        self.device = torch.device("cuda" if with_cuda else "cpu")
+
+    def train_model(self):
+        self.model.to(self.device)
+        self.model.train()
+        sum_loss = 0
+        sum_tokens = 0
+        for epoch in range(self.num_epochs):
+            print(EPOCH_LOG.format(dt.datetime.now(), (epoch + 1), self.num_epochs))
+
+            for step, batch in enumerate(self.train_dataloader):
+                self.optimizer.zero_grad()
+                text_vecs = batch['text_vecs'].to(self.device)
+                target_vecs = batch['target_vecs'].to(self.device)
+                
+                encoded = self.model.encoder(text_vecs, batch['text_lens'], use_packed=batch['use_packed'])
+                
+                decoder_output, preds, attn_w_log = self.model.decoder.decode_forced(target_vecs, encoded, batch['text_lens'])
+                
+                scores = decoder_output.view(-1, decoder_output.size(-1))
+                
+                loss = self.loss(scores, target_vecs.view(-1))
+                sum_loss += loss.item()
+                
+                num_tokens = target_vecs.ne(0).long().sum().item()
+                loss /= num_tokens
+                
+                sum_tokens += num_tokens
+                
+                loss.backward()
+                self.optimizer.step()
+                # look into whether perplexity is the best score to show for this
+                # i.e. whether to include as part of log by default or if that should be configurable
+                # or if it should be the only thing shown?????
+                if i % 100 == 0:
+                    print(STEP_LOG.format(dt.datetime.now(), step, len(self.train_dataloader)))
+                    # print('{} | Step {} | perplexity achieved: {}'.format(dt.datetime.now(), i, calculate_perplexity(sum_loss/sum_tokens)))
+
+
+
+
+
     pass
 
+
+'''
+***
+TO CONSIDER:
+is there any benefit to combining the usage of an RNN (either LSTM or GRU)
+with transformer architecture that is BERT-pretrained?
+***
+'''
+
+
+
+
+
+
+
+##### BERT MODEL(S) #####
+
+class BERTmodel(object):
+    pass
+
+
+class BERTtrainer(object):
+    pass
 
 """
 FIGURE OUT HOW BLEU SCORE WORKS
