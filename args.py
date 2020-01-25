@@ -32,15 +32,20 @@ def get_train_args():
                         default=0.001,
                         help='Learning rate.')
     #LOOK INTO MORE DESCRIPTIVE WAY TO EXPLAIN LEARNING RATE IN HELP MSG
-    parser.add_argument('--verbose',
-                        type=lambda s: s.lower().startswith('t'),
-                        default=True,
-                        help='Print logging details to console. Includes epoch number, loss, perplexity.')
+    # parser.add_argument('--verbose',
+    #                    type=lambda s: s.lower().startswith('t'),
+    #                    default=True,
+    #                    help='Print logging details to console. Includes epoch number, loss, perplexity.')
     #LOOK INTO WHAT EXACTLY I WANT TO INCLUDE IN VERBOSE LOGGER ???
     parser.add_argument('--batch_size', 
                         type=int, 
                         default=32, 
                         help='Size of batch, i.e. size of data partitions')
+    parser.add_argument('--save_dir',
+                        type=str,
+                        default='./models/',
+                        help='Directory to save models.')
+
 
 
     '''
