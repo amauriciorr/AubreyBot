@@ -144,6 +144,13 @@ def batchify(batch):
     }
 
 def calculate_perplexity(ce_loss):
+    '''
+    perplexity is essentially the exponentiation of entropy. it is a metric
+    inversely proportional to the probability that the model assigns to a set of sequences; 
+    i.e. a measurement of how well a probability model predicts a sample. intuitively, 
+    perplexity measures the average rank of the true next-token, when tokens are ordered 
+    by the model's conditional probabilities
+    '''
   return (2**(ce_loss/np.log(2)))
 
 '''
