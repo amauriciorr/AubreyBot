@@ -380,7 +380,7 @@ class seq2seqTrainer(object):
                 # look into whether perplexity is the best score to show for this
                 # i.e. whether to include as part of log by default or if that should be configurable
                 # or if it should be the only thing shown?????
-                if i % 100 == 0:
+                if step % 100 == 0:
                     print(STEP_LOG.format(dt.datetime.now(), calculate_perplexity(sum_loss/sum_tokens), step, len(self.train_dataloader)))
                     # print('{} | Step {} | perplexity achieved: {}'.format(dt.datetime.now(), i, calculate_perplexity(sum_loss/sum_tokens)))
 
