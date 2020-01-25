@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 EPOCH_LOG = '{} | Epoch {} / {}'
-STEP_LOG = '{} | Step {} / {}'
+STEP_LOG = '{} | Perplexity achieved: {} | Step {} / {}'
 
 class ChatDictionary(object):
     """
@@ -143,6 +143,8 @@ def batchify(batch):
         'use_packed': True
     }
 
+def calculate_perplexity(ce_loss):
+  return (2**(ce_loss/np.log(2)))
 
 '''
 ***
@@ -372,7 +374,7 @@ class seq2seqTrainer(object):
                 # i.e. whether to include as part of log by default or if that should be configurable
                 # or if it should be the only thing shown?????
                 if i % 100 == 0:
-                    print(STEP_LOG.format(dt.datetime.now(), step, len(self.train_dataloader)))
+                    print(STEP_LOG.format(dt.datetime.now(), calculate_perplexity(sum_loss/sum_tokens), step, len(self.train_dataloader)))
                     # print('{} | Step {} | perplexity achieved: {}'.format(dt.datetime.now(), i, calculate_perplexity(sum_loss/sum_tokens)))
 
 
