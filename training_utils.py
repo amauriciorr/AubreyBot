@@ -1,5 +1,6 @@
 import json
 import torch
+import numpy as np
 import datetime as dt
 import pickle as pkl
 import torch.nn as nn
@@ -153,6 +154,9 @@ def calculate_perplexity(ce_loss):
     '''
   return (2**(ce_loss/np.log(2)))
 
+def format_perplexity(ppl):
+    whole, dec = str(ppl).split('.')
+    return '_' + whole + '-' + dec + '_'
 '''
 ***
 REMEMBER: REACH OUT TO PROF. CHO OR TAs TO CONSULT ON BEST WAY TO CITE THEIR WORK
@@ -337,7 +341,7 @@ MAYBE???
 '''
 class seq2seqTrainer(object):
     def __init__(self, model, train_dataloader, valid_dataloader, loss, optimizer,
-                 learning_rate, with_cuda, num_epochs):
+                 learning_rate, with_cuda, num_epochs, models_dir):
         self.model = model
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
@@ -347,10 +351,13 @@ class seq2seqTrainer(object):
         self.with_cuda = with_cuda
         self.num_epochs = num_epochs
         self.device = torch.device("cuda" if with_cuda else "cpu")
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=10)
+        self.models_dir = models_dir
 
     def train_model(self):
         self.model.to(self.device)
         self.model.train()
+        best_val_loss = np.inf
         sum_loss = 0
         sum_tokens = 0
         for epoch in range(self.num_epochs):
@@ -377,18 +384,38 @@ class seq2seqTrainer(object):
                 
                 loss.backward()
                 self.optimizer.step()
-                # look into whether perplexity is the best score to show for this
-                # i.e. whether to include as part of log by default or if that should be configurable
-                # or if it should be the only thing shown?????
                 if step % 100 == 0:
                     print(STEP_LOG.format(dt.datetime.now(), calculate_perplexity(sum_loss/sum_tokens), step, len(self.train_dataloader)))
-                    # print('{} | Step {} | perplexity achieved: {}'.format(dt.datetime.now(), i, calculate_perplexity(sum_loss/sum_tokens)))
+            avg_train_loss = sum_loss / sum_tokens
+            val_loss = 0
+            val_tokens = 0
+            for step, batch in enumerate(self.valid_dataloader):
+                self.model.eval()
+                text_vecs = batch['text_vecs'].to(self.device)
+                target_vecs = batch['target_vecs'].to(self.device)
+                
+                encoded = self.model.encoder(text_vecs, batch['text_lens'], use_packed=batch['use_packed'])
+                
+                decoder_output, preds, attn_w_log = self.model.decoder.decode_forced(target_vecs, encoded, batch['text_lens'])
+                
+                scores = decoder_output.view(-1, decoder_output.size(-1))
+                
+                loss = self.loss(scores, target_vecs.view(-1))
+                
+                num_tokens = target_vecs.ne(0).long().sum().item()
+                
+                val_tokens += num_tokens
+                val_loss += loss.item()
 
+            avg_val_loss = val_loss / val_tokens
+            val_ppl = calculate_perplexity(avg_val_loss)
+            self.scheduler.step(avg_val_loss)
+            print('{} | validation perplexity achieved: {}'.format(dt.datetime.now(), val_ppl))
 
-
-
-
-    pass
+            if avg_val_loss < best_val_loss:
+                best_val_loss = avg_val_loss
+                formatted_ppl = format_perplexity(val_ppl)
+                torch.save(self.model.save_dict(), models_dir+'epoch-'+str(epoch+1)+formatted_ppl+'chatbot.pt')
 
 
 '''
@@ -398,12 +425,6 @@ is there any benefit to combining the usage of an RNN (either LSTM or GRU)
 with transformer architecture that is BERT-pretrained?
 ***
 '''
-
-
-
-
-
-
 
 ##### BERT MODEL(S) #####
 
