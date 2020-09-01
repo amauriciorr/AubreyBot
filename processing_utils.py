@@ -8,7 +8,6 @@ import lyricsgenius
 from lyricsgenius.api import *
 from collections import defaultdict
 from genius_keys import GENIUS_ACCESS_TOKEN
-from lyricsgenius.utils import sanitize_filename
 
 RETOK = re.compile(r'\w+|[^\w\s\[\]]|\n', re.UNICODE)
 SONG_PART_REGEX = re.compile(r'\[\w+\W?\s?\w*\d?\]', re.UNICODE)
@@ -96,11 +95,11 @@ def find_artist_id(search_term, genius_obj):
 	# Assume the top search result is the intended artist
 	return found_artist['id']
 
-def force_search_artist(genius_obj, artist_name, sleep_time=600, max_songs=None,
+def force_search_artist(genius_obj, artist_name, sleep_time=180, max_songs=None,
 				  sort='popularity', per_page=20,
 				  get_full_info=True,
 				  allow_name_change=True):
-	#     repurposed from lyricsgenius package
+	###    repurposed from lyricsgenius package       	###
 	"""Search Genius.com for songs by the specified artist.
 	Returns an Artist object containing artist's songs.
 	:param artist_name: Name of the artist to search for
