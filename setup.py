@@ -1,9 +1,16 @@
 import pickle as pkl
 from args import get_setup_args
 from processing_utils import * 
-
+from lyricsgenius.utils import sanitize_filename 
+import sys
 
 def get_and_process_songs(args):
+	if args.artist_name is None:
+		print('\n********** ERROR *************' )
+		print('Invalid or missing artist name.')
+		print('\n******************************\n')
+		sys.exit()
+
 	stock_filename = 'Lyrics_' + args.artist_name.replace(' ', '') + '.json'
 	stock_filename = sanitize_filename(stock_filename)
 
@@ -17,10 +24,12 @@ def get_and_process_songs(args):
 											 allow_name_change=True)
 		print('{}| Finished download in {}'.format(dt.datetime.now(), (dt.datetime.now() - start)))
 		artist_tracks.save_lyrics()
-	elif args.load_path:
-	  
+		
+	if args.load_path:
+		genius_file = read_json(args.load_path)
+	else:
+		genius_file = read_json('./'+stock_filename)    
 
-	genius_file = read_json('./'+stock_filename)    
 	word_counts = create_counts_dict(genius_file, RETOK)
 	pkl.dump(word_counts, open('word_counts_dict.p','wb'))
 	artist_lyrics = get_lyrics_from_json(genius_file, SONG_PART_REGEX)
