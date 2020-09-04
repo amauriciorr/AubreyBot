@@ -1,8 +1,8 @@
 import sys
 import pickle as pkl
-from args import get_setup_args
-from processing_utils import *
 from lyricsgenius.utils import sanitize_filename
+from processing_utils import *
+from args import get_setup_args
 
 def get_and_process_songs(args):
     if args.artist_name is None and args.download_lyrics:
