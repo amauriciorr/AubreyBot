@@ -5,17 +5,16 @@ from processing_utils import *
 from lyricsgenius.utils import sanitize_filename
 
 def get_and_process_songs(args):
-    if args.artist_name is None:
+    if args.artist_name is None and args.download_lyrics:
         print('\n********** ERROR *************')
         print('Invalid or missing artist name.')
         print('\n******************************\n')
         sys.exit()
 
-    stock_filename = 'Lyrics_' + args.artist_name.replace(' ', '') + '.json'
-    stock_filename = sanitize_filename(stock_filename)
-
     if args.download_lyrics:
         start = dt.datetime.now()
+        stock_filename = 'Lyrics_' + args.artist_name.replace(' ', '') + '.json'
+        stock_filename = sanitize_filename(stock_filename)
         print('{}| Beginning download'.format(start))
         genius = lyricsgenius.Genius(GENIUS_ACCESS_TOKEN, sleep_time=1)
         artist_tracks = force_search_artist(genius, args.artist_name, sleep_time=600,
