@@ -8,6 +8,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from processing_utils import RETOK
 
 EPOCH_LOG = '{} | Epoch {} / {}'
 STEP_LOG = '{} | Perplexity achieved: {} | Step {} / {}'
@@ -24,19 +25,20 @@ class ChatDictionary(object):
 
         # dict_raw = open(dict_file_path, 'r').readlines()
         dict_raw = pkl.load(open(dict_file_path, 'rb'))
-        
+
         for i, kvp in enumerate(dict_raw.items()):
             _word, _count = kvp
             self.word2ind[_word] = i
             self.ind2word[i] = _word
             self.counts[_word] = _count
-            
+
     def t2v(self, tokenized_text):
-        return [self.word2ind[w] if w in self.counts else self.word2ind['__unk__'] for w in tokenized_text]
+        return [self.word2ind[w] if w in self.counts else self.word2ind['__unk__']
+                for w in tokenized_text]
 
     def v2t(self, list_ids):
         return ' '.join([self.ind2word[i] for i in list_ids])
-    
+
     def pred2text(self, tensor):
         result = []
         for i in range(tensor.size(0)):
@@ -45,7 +47,7 @@ class ChatDictionary(object):
             else:
                 result.append(self.ind2word[tensor[i].item()])
         return ' '.join(result)
-    
+
     def __len__(self):
         return len(self.counts)
 
@@ -53,13 +55,12 @@ class ChatDataset(Dataset):
     """
     Json dataset wrapper
     """
-    
     def __init__(self, dataset_file_path, dictionary, dt='train'):
         super().__init__()
-        
+
         json_text = open(dataset_file_path, 'r').readlines()
         self.samples = []
-        
+
         for sample in tqdm(json_text):
             sample = sample.rstrip()
             sample = json.loads(sample)
@@ -67,22 +68,22 @@ class ChatDataset(Dataset):
             _inp_toked_id = dictionary.t2v(_inp_toked)
 
             sample['text_vec'] = torch.tensor(_inp_toked_id, dtype=torch.long)
-            
+
             # train and valid have different key names for target
             if dt == 'train':
                 _tar_toked = RETOK.findall(sample['labels'][0]) + ['__end__']
             elif dt == 'valid':
                 _tar_toked = RETOK.findall(sample['eval_labels'][0]) + ['__end__']
-                
+
             _tar_toked_id = dictionary.t2v(_tar_toked)
-            
+
             sample['target_vec'] = torch.tensor(_tar_toked_id, dtype=torch.long)
-            
+
             self.samples.append(sample)
-            
+
     def __getitem__(self, i):
         return self.samples[i]['text_vec'], self.samples[i]['target_vec']
-    
+
     def __len__(self):
         return len(self.samples)
 
@@ -94,13 +95,12 @@ def pad_tensor(tensors, sort=True, pad_token=0):
     rows = len(tensors)
     lengths = [len(i) for i in tensors]
     max_t = max(lengths)
-        
+
     output = tensors[0].new(rows, max_t)
     output.fill_(pad_token)  # 0 is a pad token here
-    
-    for i, (tensor, length) in enumerate(zip(tensors, lengths)):
-        output[i,:length] = tensor
 
+    for i, (tensor, length) in enumerate(zip(tensors, lengths)):
+        output[i, :length] = tensor
     return output, lengths
 
 def argsort(keys, *lists, descending=False):
@@ -130,13 +130,13 @@ def batchify(batch):
     '''
     inputs = [i[0] for i in batch]
     labels = [i[1] for i in batch]
-    
+
     input_vecs, input_lens = pad_tensor(inputs)
     label_vecs, label_lens = pad_tensor(labels)
-    
+
     # sort only wrt inputs here for encoder packinng
-    input_vecs, input_lens, label_vecs, label_lens = argsort(input_lens, input_vecs, input_lens, label_vecs,\
-                                                             label_lens, descending=True)
+    input_vecs, input_lens, label_vecs, label_lens = argsort(input_lens, input_vecs, input_lens,
+                                                             label_vecs, label_lens, descending=True)
 
     return {
         'text_vecs': input_vecs,
@@ -154,7 +154,7 @@ def calculate_perplexity(ce_loss):
     perplexity measures the average rank of the true next-token, when tokens are ordered 
     by the model's conditional probabilities
     '''
-    return (2**(ce_loss/np.log(2)))
+    return 2**(ce_loss/np.log(2))
 
 def format_perplexity(ppl):
     whole, dec = str(ppl).split('.')
@@ -171,7 +171,8 @@ REMEMBER: REACH OUT TO PROF. CHO OR TAs TO CONSULT ON BEST WAY TO CITE THEIR WOR
 class EncoderRNN(nn.Module):
     """Encodes the input context."""
 
-    def __init__(self, vocab_size, embed_size, hidden_size, num_layers, pad_idx=0, dropout=0, shared_lt=None):
+    def __init__(self, vocab_size, embed_size, hidden_size, num_layers, pad_idx=0,
+                 dropout=0, shared_lt=None):
         super().__init__()
         self.vocab_size = vocab_size
         self.embed_size = embed_size
@@ -179,17 +180,15 @@ class EncoderRNN(nn.Module):
         self.num_layers = num_layers
         self.dropout = nn.Dropout(p=dropout)
         self.pad_idx = pad_idx
-        
+
         if shared_lt is None:
             self.embedding = nn.Embedding(self.vocab_size, self.embed_size, pad_idx)
         else:
             self.embedding = shared_lt
-            
-        self.gru = nn.GRU(
-            self.embed_size, self.hidden_size, num_layers=self.num_layers, batch_first=True, dropout=dropout if num_layers > 1 else 0,
-        )
-        
-        
+
+        self.gru = nn.GRU(self.embed_size, self.hidden_size, num_layers=self.num_layers, 
+                          batch_first=True, dropout=dropout if num_layers > 1 else 0,)
+
     def forward(self, text_vec, text_lens, hidden=None, use_packed=True):
         embedded = self.embedding(text_vec)
         attention_mask = text_vec.ne(self.pad_idx)
@@ -200,7 +199,7 @@ class EncoderRNN(nn.Module):
         output, hidden = self.gru(embedded, hidden)
         if use_packed is True:
             output, output_lens = pad_packed_sequence(output, batch_first=True)
-        
+
         return output, hidden, attention_mask
 
     
@@ -217,9 +216,8 @@ class DecoderRNN(nn.Module):
         
         self.embedding = nn.Embedding(self.vocab_size, self.embed_size, 0)
         
-        self.gru = nn.GRU(
-            self.embed_size, self.hidden_size, num_layers=self.num_layers, batch_first=True, dropout=dropout if num_layers > 1 else 0,
-        )
+        self.gru = nn.GRU(self.embed_size, self.hidden_size, num_layers=self.num_layers, 
+                          batch_first=True, dropout=dropout if num_layers > 1 else 0,)
         
         self.attention = AttentionLayer(self.hidden_size, self.embed_size)
 
@@ -237,10 +235,11 @@ class DecoderRNN(nn.Module):
         attn_w_log = []
 
         for i in range(seqlen):
-            decoder_output, decoder_hidden = self.gru(emb[:,i,:].unsqueeze(1), decoder_hidden)
+            decoder_output, decoder_hidden = self.gru(emb[:, i, :].unsqueeze(1), decoder_hidden)
             
             # compute attention at each time step
-            decoder_output_attended, attn_weights = self.attention(decoder_output, decoder_hidden, encoder_output, attention_mask)
+            decoder_output_attended, attn_weights = self.attention(decoder_output, decoder_hidden, 
+                                                                   encoder_output, attention_mask)
             output.append(decoder_output_attended)
             attn_w_log.append(attn_weights)
             
@@ -251,19 +250,21 @@ class DecoderRNN(nn.Module):
     
     def decode_forced(self, ys, encoder_states, xs_lens):
         encoder_output, encoder_hidden, attention_mask = encoder_states
-        
+
         batch_size = ys.size(0)
         target_length = ys.size(1)
         longest_label = max(target_length, self.longest_label)
-        
-        starts = torch.Tensor([1]).long().to(self.embedding.weight.device).expand(batch_size, 1).long()  # expand to batch size
-        
+        # expand to batch size
+        starts = torch.Tensor([1]).long().to(self.embedding.weight.device)\
+                 .expand(batch_size, 1).long()
+
         # Teacher forcing: Feed the target as the next input
         y_in = ys.narrow(1, 0, ys.size(1) - 1)
         decoder_input = torch.cat([starts, y_in], 1)
-        decoder_output, decoder_hidden, attn_w_log = self.forward(decoder_input, encoder_hidden, encoder_states)
+        decoder_output, decoder_hidden, attn_w_log = self.forward(decoder_input, encoder_hidden, 
+                                                                  encoder_states)
         _, preds = decoder_output.max(dim=2)
-        
+
         return decoder_output, preds, attn_w_log
     
     
@@ -281,8 +282,8 @@ class AttentionLayer(nn.Module):
 
         batch_size, seq_length, hidden_size = encoder_output.size()
 
-        encoder_output_t = encoder_output.transpose(1,2)
-        
+        encoder_output_t = encoder_output.transpose(1, 2)
+
         attention_scores = torch.bmm(decoder_output, encoder_output_t).squeeze(1)
 
         attention_scores.masked_fill_((~attention_mask), -10e5)
@@ -298,7 +299,9 @@ class AttentionLayer(nn.Module):
         return output, attention_weights
 
 
-def set_model_config(chat_dictionary, hidden_size=512, embedding_size=256, num_layers_enc=2, num_layers_dec=2, dropout=0.3, encoder_shared_lt=True):
+def set_model_config(chat_dictionary, hidden_size=512, embedding_size=256, 
+                     num_layers_enc=2, num_layers_dec=2, dropout=0.3, 
+                     encoder_shared_lt=True):
     opts = {}
     opts['vocab_size'] = len(chat_dictionary)
     opts['hidden_size'] = hidden_size
@@ -320,27 +323,23 @@ class seq2seq(nn.Module):
         super().__init__()
         self.opts = opts
         
-        self.decoder = DecoderRNN(
-                                    vocab_size=self.opts['vocab_size'],
-                                    embed_size=self.opts['embedding_size'],
-                                    hidden_size=self.opts['hidden_size'],
-                                    num_layers=self.opts['num_layers_dec'],
-                                    dropout=self.opts['dropout'],
-                                )
+        self.decoder = DecoderRNN(vocab_size=self.opts['vocab_size'],
+                                  embed_size=self.opts['embedding_size'],
+                                  hidden_size=self.opts['hidden_size'],
+                                  num_layers=self.opts['num_layers_dec'],
+                                  dropout=self.opts['dropout'],)
         
-        self.encoder = EncoderRNN(
-                                    vocab_size=self.opts['vocab_size'],
-                                    embed_size=self.opts['embedding_size'],
-                                    hidden_size=self.opts['hidden_size'],
-                                    num_layers=self.opts['num_layers_enc'],
-                                    dropout=self.opts['dropout'],
-                                    shared_lt=self.decoder.embedding
-        )
-        
+        self.encoder = EncoderRNN(vocab_size=self.opts['vocab_size'],
+                                  embed_size=self.opts['embedding_size'],
+                                  hidden_size=self.opts['hidden_size'],
+                                  num_layers=self.opts['num_layers_enc'],
+                                  dropout=self.opts['dropout'],
+                                  shared_lt=self.decoder.embedding)
+
     def train(self):
         self.encoder.train()
         self.decoder.train()
-        
+
     def eval(self):
         self.encoder.eval()
         self.decoder.eval()
@@ -385,21 +384,21 @@ class seq2seqTrainer(object):
                 self.optimizer.zero_grad()
                 text_vecs = batch['text_vecs'].to(self.device)
                 target_vecs = batch['target_vecs'].to(self.device)
-                
+
                 encoded = self.model.encoder(text_vecs, batch['text_lens'], use_packed=batch['use_packed'])
-                
+
                 decoder_output, preds, attn_w_log = self.model.decoder.decode_forced(target_vecs, encoded, batch['text_lens'])
-                
+
                 scores = decoder_output.view(-1, decoder_output.size(-1))
-                
+
                 loss = self.loss(scores, target_vecs.view(-1))
                 sum_loss += loss.item()
-                
+
                 num_tokens = target_vecs.ne(0).long().sum().item()
                 loss /= num_tokens
-                
+
                 sum_tokens += num_tokens
-                
+
                 loss.backward()
                 self.optimizer.step()
                 if step % 100 == 0:
@@ -411,17 +410,17 @@ class seq2seqTrainer(object):
                 self.model.eval()
                 text_vecs = batch['text_vecs'].to(self.device)
                 target_vecs = batch['target_vecs'].to(self.device)
-                
+
                 encoded = self.model.encoder(text_vecs, batch['text_lens'], use_packed=batch['use_packed'])
-                
+
                 decoder_output, preds, attn_w_log = self.model.decoder.decode_forced(target_vecs, encoded, batch['text_lens'])
-                
+
                 scores = decoder_output.view(-1, decoder_output.size(-1))
-                
+
                 loss = self.loss(scores, target_vecs.view(-1))
-                
+
                 num_tokens = target_vecs.ne(0).long().sum().item()
-                
+
                 val_tokens += num_tokens
                 val_loss += loss.item()
 
@@ -433,15 +432,14 @@ class seq2seqTrainer(object):
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 formatted_ppl = format_perplexity(val_ppl)
-                torch.save(self.model.save_dict(), models_dir+'epoch-'+str(epoch+1)+formatted_ppl+'chatbot.pt')
-
+                torch.save(self.model.save_dict(), 
+                           self.models_dir+'epoch-'+str(epoch+1)+formatted_ppl+'chatbot.pt')
 
 
 ##### BERT MODEL(S) #####
 
 class BERTmodel(object):
     pass
-
 
 class BERTtrainer(object):
     pass
