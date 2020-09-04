@@ -53,7 +53,14 @@ def create_text_and_target(songs, num_songs, split=0.8):
 		song = song.split('\n')
 		# 0-index refers to song-part designation, i.e. [INTRO],
 		# that was replaced with empty string
-		base_lyric = song[1]
+		try:
+			base_lyric = song[1]
+		except IndexError:
+			print('The following text is too short. Most likely not lyrics:')
+			print('*' * 100)
+			print(song)
+			print('*' * 100)
+			print('\n\n')
 		for lyric in song[2:]:
 			text_and_target = {}
 			if lyric:
