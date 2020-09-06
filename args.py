@@ -71,6 +71,8 @@ def get_train_args():
                         type=str,
                         default='./models/',
                         help='Directory to save models.')
+    args = parser.parse_args()
+    return args
 
     '''
     ***
