@@ -362,13 +362,12 @@ MAYBE???
 '''
 class seq2seqTrainer:
     def __init__(self, model, train_dataloader, valid_dataloader, loss, optimizer,
-                 with_cuda, num_epochs, device, models_dir):
+                 num_epochs, device, models_dir):
         self.model = model
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
         self.loss = loss
         self.optimizer = optimizer
-        self.with_cuda = with_cuda
         self.num_epochs = num_epochs
         self.device = device
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', patience=10)
