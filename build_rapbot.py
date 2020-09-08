@@ -27,7 +27,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=training_args.learning_rate, 
                                  weight_decay=training_args.weight_decay, amsgrad=True)
     model_trainer = seq2seqTrainer(model, train_dataloader, valid_dataloader, criterion,
-                                   optimizer, training_args.with_cuda,
-                                   training_args.num_epochs, current_device, training_args.save_dir)
+                                   optimizer, training_args.num_epochs, current_device, 
+                                   training_args.save_dir)
 
     model_trainer.train_model()
