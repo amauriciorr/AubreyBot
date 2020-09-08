@@ -20,14 +20,14 @@ if __name__ == "__main__":
     opts = set_model_config(chat_dict, training_args.hidden_size, training_args.embedding_size,
                             training_args.num_layers_enc, training_args.num_layers_dec,
                             training_args.dropout)
-
+    current_device = torch.device("cuda" if training_args.with_cuda else "cpu")
     model = seq2seq(opts)
     model.to(current_device)
     criterion = nn.CrossEntropyLoss(ignore_index=0, reduction='sum')
-    optimizer = torch.optim.Adam(chat_model.parameters(), 0.01, amsgrad=True)
-
-    model_trainer = seq2seqTrainer(seq2seq, train_dataloader, valid_dataloader, criterion,
-                                   optimizer, training_args.learning_rate, training_args.with_cuda,
-                                   training_args.num_epochs, training_args.save_dir)
+    optimizer = torch.optim.Adam(model.parameters(), lr=training_args.learning_rate, 
+                                 weight_decay=training_args.weight_decay, amsgrad=True)
+    model_trainer = seq2seqTrainer(model, train_dataloader, valid_dataloader, criterion,
+                                   optimizer, training_args.with_cuda,
+                                   training_args.num_epochs, current_device, training_args.save_dir)
 
     model_trainer.train_model()
