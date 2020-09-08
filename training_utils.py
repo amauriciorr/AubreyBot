@@ -26,13 +26,16 @@ class ChatDictionary(object):
         self.word2ind = {}  # word:index
         self.ind2word = {}  # index:word
         self.counts = {}  # word:count
-        self.word2ind['__unk__'] = 0
+        self.word2ind['__null__'] = 0
+        self.word2ind['__start__'] = 1
+        self.word2ind['__end__'] = 2
+        self.word2ind['__unk__'] = 3
         # dict_raw = open(dict_file_path, 'r').readlines()
         dict_raw = pkl.load(open(dict_file_path, 'rb'))
 
         for i, kvp in enumerate(dict_raw.items()):
             _word, _count = kvp
-            self.word2ind[_word] = i + 1
+            self.word2ind[_word] = i + 4
             self.ind2word[i] = _word
             self.counts[_word] = _count
 
