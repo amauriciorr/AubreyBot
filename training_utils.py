@@ -1,3 +1,5 @@
+import code
+import re
 import json
 import torch
 import numpy as np
@@ -8,8 +10,10 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-from processing_utils import RETOK
-
+# from processing_utils import RETOK
+# commented above, added below to run on GCP without needing to import
+# processing_utils, i.e. installing lyrics_genius library
+RETOK = re.compile(r'\w+|[^\w\s\[\]]|\n', re.UNICODE)
 EPOCH_LOG = '{} | Epoch {} / {}'
 STEP_LOG = '{} | Perplexity achieved: {} | Step {} / {}'
 TIMEZONE = 'America/New_York'
@@ -22,13 +26,13 @@ class ChatDictionary(object):
         self.word2ind = {}  # word:index
         self.ind2word = {}  # index:word
         self.counts = {}  # word:count
-
+        self.word2ind['__unk__'] = 0
         # dict_raw = open(dict_file_path, 'r').readlines()
         dict_raw = pkl.load(open(dict_file_path, 'rb'))
 
         for i, kvp in enumerate(dict_raw.items()):
             _word, _count = kvp
-            self.word2ind[_word] = i
+            self.word2ind[_word] = i + 1
             self.ind2word[i] = _word
             self.counts[_word] = _count
 
@@ -55,7 +59,7 @@ class ChatDataset(Dataset):
     """
     Json dataset wrapper
     """
-    def __init__(self, dataset_file_path, dictionary, dt='train'):
+    def __init__(self, dictionary, dataset_file_path, dt='train'):
         super().__init__()
 
         json_text = open(dataset_file_path, 'r').readlines()
@@ -158,7 +162,7 @@ def calculate_perplexity(ce_loss):
 
 def format_perplexity(ppl):
     whole, dec = str(ppl).split('.')
-    return '_' + whole + '-' + dec + '_'
+    return '_perplexity_' + whole + '-' + dec
 
 
 '''
@@ -345,7 +349,7 @@ class seq2seq(nn.Module):
         self.decoder.eval()
 
 def build_dataloader(dataset, collate_func, batch_size, shuffle=True):
-    loader = DataLoader(dataset, shuffle, collate_func, batch_size)
+    loader = DataLoader(dataset, shuffle=shuffle, collate_fn=collate_func, batch_size=batch_size)
     return loader
 
 '''
@@ -356,18 +360,17 @@ I.E. seq2seqTrainer(training_Args)
 MAYBE???
 ***
 '''
-class seq2seqTrainer(object):
+class seq2seqTrainer:
     def __init__(self, model, train_dataloader, valid_dataloader, loss, optimizer,
-                 learning_rate, with_cuda, num_epochs, models_dir):
+                 with_cuda, num_epochs, device, models_dir):
         self.model = model
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
         self.loss = loss
         self.optimizer = optimizer
-        self.learning_rate = learning_rate
         self.with_cuda = with_cuda
         self.num_epochs = num_epochs
-        self.device = torch.device("cuda" if with_cuda else "cpu")
+        self.device = device
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', patience=10)
         self.models_dir = models_dir
 
@@ -432,8 +435,8 @@ class seq2seqTrainer(object):
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 formatted_ppl = format_perplexity(val_ppl)
-                torch.save(self.model.save_dict(), 
-                           self.models_dir+'epoch-'+str(epoch+1)+formatted_ppl+'chatbot.pt')
+                self.models_dir += 'seq2seq_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
+                torch.save(self.model.save_dict(), self.models_dir)
 
 
 ##### BERT MODEL(S) #####
