@@ -33,6 +33,11 @@ def get_train_args():
                         default=0.001,
                         help='Controls how much we are adjusting the weights of our network with\
                               respect to the loss gradient.')
+    parser.add_argument('--weight_decay',
+                        type=float,
+                        default=0,
+                        help='L2 regularization penalty. Causes weights to exponentially decay\
+                              to zero.')
     # parser.add_argument('--verbose',
     #                    type=lambda s: s.lower().startswith('t'),
     #                    default=True,
