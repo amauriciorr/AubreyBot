@@ -16,7 +16,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 RETOK = re.compile(r'\w+|[^\w\s\[\]]|\n', re.UNICODE)
 EPOCH_LOG = '{} | Epoch {} / {}'
 STEP_LOG = '{} | Perplexity achieved: {} | Step {} / {}'
-TIMEZONE = 'America/New_York'
+TIMEZONE = pytz.timezone('America/New_York')
 
 class ChatDictionary(object):
     """
