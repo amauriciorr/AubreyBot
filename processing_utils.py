@@ -37,43 +37,35 @@ def get_lyrics_from_json(json_file, regex):
 	iterate through Genius JSON file and retrieve
 	lyrics. remove song-part designation
 	'''
+	songs = []
 	all_lyrics = []
 	for song in json_file['songs']:
 		lyrics = regex.sub('', song['lyrics'])
 		lyrics = lyrics.lower()
-		all_lyrics.append(lyrics)
+		songs.append(lyrics)
+	for song in songs:
+		all_lyrics += list(filter(('').__ne__, song.split('\n')))
 	return all_lyrics
 
-def create_text_and_target(songs, num_songs, split=0.8):
-	split_idx = int(num_songs * 0.8)
+def create_text_and_target(lyrics, split=0.8):
+	split_idx = int(len(lyrics) * 0.8)
 	train_text_and_targets = []
 	valid_text_and_targets = []
+	
+	train_lyrics = lyrics[:split_idx]
+	valid_lyrics = lyrics[split_idx:]
 
-	for idx, song in enumerate(songs):
-		song = song.split('\n')
-		# 0-index refers to song-part designation, i.e. [INTRO],
-		# that was replaced with empty string
-		try:
-			base_lyric = song[1]
-		except IndexError:
-			print('The following text is too short. Most likely not lyrics:')
-			print('*' * 100)
-			print(song)
-			print('*' * 100)
-			print('\n\n')
-		for lyric in song[2:]:
-			text_and_target = {}
-			if lyric:
-				if idx < split_idx:
-					text_and_target['text'] = base_lyric
-					text_and_target['labels'] = [lyric]
-					train_text_and_targets.append(text_and_target)
-				else:
-					text_and_target['text'] = base_lyric
-					text_and_target['eval_labels'] = [lyric]
-					valid_text_and_targets.append(text_and_target)
+	for i in range(len(train_lyrics) - 1):
+		text_and_target = {}
+		text_and_target['text'] = train_lyrics[i]
+		text_and_target['labels'] = train_lyrics[i + 1]
+		train_text_and_targets.append(text_and_target)
 
-				base_lyric += ('\n ' + lyric)
+	for i in range(len(valid_lyrics) - 1):
+		text_and_target = {}
+		text_and_target['text'] = valid_lyrics[i]
+		text_and_target['labels'] = valid_lyrics[i + 1]
+		valid_text_and_targets.append(text_and_target)
 
 	write_jsonl('./train_lyrics.jsonl', train_text_and_targets)
 	write_jsonl('./valid_lyrics.jsonl', valid_text_and_targets)
