@@ -1,14 +1,16 @@
 import re
 import json
 import torch
+import copy
 import numpy as np
 import datetime as dt
 import pickle as pkl
 import pytz
 import torch.nn as nn
 from tqdm import tqdm
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, TensorDataset, RandomSampler
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from transformers import BertTokenizer, EncoderDecoderConfig, EncoderDecoderModel, AdamW
 # from processing_utils import RETOK
 # commented above, added below to run on GCP without needing to import
 # processing_utils, i.e. installing lyrics_genius library
@@ -350,14 +352,7 @@ def build_dataloader(dataset, collate_func, batch_size, shuffle=True):
     loader = DataLoader(dataset, shuffle=shuffle, collate_fn=collate_func, batch_size=batch_size)
     return loader
 
-'''
-***
 
-ANTICIPATE HAVING TO REWRITE BELOW TO FEED ARGS PARAM TO INITIATE CLASS
-I.E. seq2seqTrainer(training_Args) 
-MAYBE???
-***
-'''
 class seq2seqTrainer:
     def __init__(self, model, train_dataloader, valid_dataloader, loss, optimizer,
                  num_epochs, device, models_dir):
@@ -402,9 +397,10 @@ class seq2seqTrainer:
 
                 loss.backward()
                 self.optimizer.step()
+                avg_train_loss = sum_loss / sum_tokens
                 if step % 100 == 0:
-                    print(STEP_LOG.format(dt.datetime.now(tz=TIMEZONE), calculate_perplexity(sum_loss/sum_tokens), step, len(self.train_dataloader)))
-            avg_train_loss = sum_loss / sum_tokens
+                    print(STEP_LOG.format(dt.datetime.now(tz=TIMEZONE), calculate_perplexity(avg_train_loss), step, len(self.train_dataloader)))
+            
             val_loss = 0
             val_tokens = 0
             for step, batch in enumerate(self.valid_dataloader):
@@ -428,7 +424,7 @@ class seq2seqTrainer:
             avg_val_loss = val_loss / val_tokens
             val_ppl = calculate_perplexity(avg_val_loss)
             self.scheduler.step(avg_val_loss)
-            print('{} | validation perplexity achieved: {}'.format(dt.datetime.now(), val_ppl))
+            print('{} | Validation perplexity achieved: {}'.format(dt.datetime.now(), val_ppl))
 
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
@@ -438,13 +434,123 @@ class seq2seqTrainer:
 
 
 ##### BERT MODEL(S) #####
+def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128):
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+    json_text = open(dataset_file_path, 'r').readlines()
 
-class BERTmodel(object):
-    pass
+    input_ids_encode = []
+    attention_masks_encode = []
+    input_ids_decode = []
+    attention_masks_decode = []
+    lm_labels = []
 
-class BERTtrainer(object):
-    pass
+    for sample in tqdm(json_text):
+        sample = json.loads(sample)
+        text_tokenized = tokenizer.tokenize(sample['text'])
+        text_tokenized_length = len(text_tokenized)
+        if stage == 'valid':
+            labels_tokenized = tokenizer.tokenize(sample['eval_labels'])
+        else:
+            labels_tokenized = tokenizer.tokenize(sample['labels'])
 
-"""
-FIGURE OUT HOW BLEU SCORE WORKS
-"""
+        labels_tokenized_length = len(labels_tokenized)
+
+        if (text_tokenized_length > max_sentence_length) or (labels_tokenized_length > max_sentence_length):
+            # BERT can only handle up to 512 tokens at once on pretrained.
+            # choice of 128 was mostly for hardware limitations, i.e. a single GPU :(
+            continue
+
+        input_id_enc = tokenizer.convert_tokens_to_ids(text_tokenized)
+        input_id_enc += [tokenizer.pad_token_id, ] * (max_sentence_length - text_tokenized_length)
+
+        input_id_dec = tokenizer.convert_tokens_to_ids(labels_tokenized)
+        input_id_dec += [tokenizer.pad_token_id, ] * (max_sentence_length - labels_tokenized_length)
+
+        lm_label = copy.deepcopy(input_id_dec)
+        attn_mask_enc = [float(i>0) for i in input_id_enc]
+        attn_mask_dec = [float(i>0) for i in input_id_dec]
+
+        input_ids_encode.append(input_id_enc)
+        input_ids_decode.append(input_id_dec)
+        attention_masks_encode.append(attn_mask_enc)
+        attention_masks_decode.append(attn_mask_dec)
+        lm_labels.append(lm_label)
+
+    input_ids_encode = torch.tensor(input_ids_encode, dtype=torch.long)
+    attention_masks_encode = torch.tensor(attention_masks_encode, dtype=torch.long)
+    input_ids_decode = torch.tensor(input_ids_decode, dtype=torch.long)
+    attention_masks_decode = torch.tensor(attention_masks_decode, dtype=torch.long)
+    lm_labels = torch.tensor(lm_labels, dtype=torch.long)
+
+    return TensorDataset(input_ids_encode, attention_masks_encode, input_ids_decode, attention_masks_decode, lm_labels)
+
+class BERT2BERT(object):
+    def __init__(self, num_epochs, batch_size, device):
+        self.model = EncoderDecoderModel.from_encoder_decoder_pretrained('bert-base-uncased', 'bert-base-uncased')
+        self.device = device
+        self.num_epochs = num_epochs
+        self.batch_size = batch_size
+
+    def train_bert(self, train_dataset, valid_dataset, criterion, optimizer):
+        self.model.to(self.device)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=10)
+        train_sampler = RandomSampler(train_dataset)
+        valid_sampler = RandomSampler(valid_dataset)
+
+        train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=self.batch_size)
+        valid_dataloader = DataLoader(valid_dataset, sampler=valid_sampler, batch_size=self.batch_size)
+
+        best_val_loss = np.inf
+        sum_loss = 0
+        sum_tokens = 0
+
+        for epoch in range(self.num_epochs):
+            print(EPOCH_LOG.format(dt.datetime.now(), (epoch + 1), self.num_epochs))
+            self.model.train()
+
+            for step, batch in enumerate(train_dataloader):
+                optimizer.zero_grad()
+                batch = tuple(t.to(self.device) for t in batch)
+                input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
+                loss, logits = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
+                                           attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
+                                           labels=lm_labels)[:2]
+                loss = criterion(logits, lm_labels.view(-1))
+                sum_loss += loss.item()
+
+                num_tokens = lm_labels.ne(0).long().sum().item()
+                sum_tokens += num_tokens
+                loss /= num_tokens
+
+                loss.backward()
+                optimizer.step()
+                avg_train_loss = sum_loss / sum_tokens
+                if step % 100 == 0:
+                    print(STEP_LOG.format(dt.datetime.now(tz=TIMEZONE), calculate_perplexity(avg_train_loss), step, len(train_dataloader)))
+            val_loss = 0
+            val_tokens = 0
+            for step, batch in enumerate(valid_dataloader):
+                self.model.eval()
+                batch = tuple(t.to(self.device) for t in batch)
+                input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
+                loss, logits = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
+                                           attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
+                                           labels=lm_labels)[:2]
+                loss = criterion(logits, lm_labels.view(-1))
+                val_loss += loss.item()
+                
+                num_tokens = lm_labels.ne(0).long().sum().item()
+                val_tokens += num_tokens
+                loss /= num_tokens
+            avg_train_loss = sum_loss / sum_tokens
+            val_ppl = calculate_perplexity(avg_val_loss)
+            scheduler.step(avg_train_loss)
+            print('{} | Validation perplexity achieved: {}'.format(dt.datetime.now(), val_ppl))
+            if avg_val_loss < best_val_loss:
+                best_val_loss = avg_val_loss
+                formatted_ppl = format_perplexity(val_ppl)
+                save_path = self.models_dir +'bert2bert_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
+                torch.save(self.model.state_dict(), save_path)
+
+
+
