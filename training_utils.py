@@ -160,7 +160,7 @@ def calculate_perplexity(ce_loss):
     return 2**(ce_loss/np.log(2))
 
 def format_perplexity(ppl):
-    whole, dec = str(ppl).split('.')
+    whole, dec = str(round(ppl, 10)).split('.')
     return '_perplexity_' + whole + '-' + dec
 
 
@@ -434,8 +434,8 @@ class seq2seqTrainer:
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 formatted_ppl = format_perplexity(val_ppl)
-                self.models_dir += 'seq2seq_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
-                torch.save(self.model.state_dict(), self.models_dir)
+                save_path = self.models_dir +'seq2seq_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
+                torch.save(self.model.state_dict(), save_path)
 
 
 ##### BERT MODEL(S) #####
