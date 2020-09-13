@@ -27,10 +27,21 @@ def create_counts_dict(json_file, regex):
 	for each word
 	'''
 	word_count_dict = defaultdict(int)
+	word_count_dict['__null__'] += 	1000000003
+	word_count_dict['__start__'] += 	1000000002
+	word_count_dict['__end__'] += 	1000000001
+	word_count_dict['__unk__'] += 	1000000000
 	for song in json_file['songs']:
 		for word in regex.findall(song['lyrics']):
 			word_count_dict[word.lower()] += 1
 	return word_count_dict
+
+def to_exclude(word):
+	blacklisted = [' ', '', '\'', '\"', '\xa0']
+	if word not in blacklisted:
+		return True
+	else:
+		return False
 
 def get_lyrics_from_json(json_file, regex):
 	'''
@@ -44,7 +55,7 @@ def get_lyrics_from_json(json_file, regex):
 		lyrics = lyrics.lower()
 		songs.append(lyrics)
 	for song in songs:
-		all_lyrics += list(filter(('').__ne__, song.split('\n')))
+		all_lyrics += list(filter(to_exclude, song.split('\n')))
 	return all_lyrics
 
 def create_text_and_target(lyrics, split=0.8):
@@ -64,7 +75,7 @@ def create_text_and_target(lyrics, split=0.8):
 	for i in range(len(valid_lyrics) - 1):
 		text_and_target = {}
 		text_and_target['text'] = valid_lyrics[i]
-		text_and_target['labels'] = valid_lyrics[i + 1]
+		text_and_target['eval_labels'] = valid_lyrics[i + 1]
 		valid_text_and_targets.append(text_and_target)
 
 	write_jsonl('./train_lyrics.jsonl', train_text_and_targets)
