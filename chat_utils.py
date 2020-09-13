@@ -87,13 +87,46 @@ def mini_batchify(sentence, chat_dictionary, device):
     }
     return batch
 
+def format_chatbot_output(reply):
+    i_am = "i ' m"
+    contraction = "n ' t "
+    possessive = " ' s "
+    i_am = re.compile(i_am)
+    contraction = re.compile(contraction)
+    possessive = re.compile(possessive)
+    if re.search(r'’', reply):
+        reply = re.sub(r'’', "'", reply)
+    if i_am.search(reply):
+        reply = i_am.sub("i'm ", reply)
+    if contraction.search(reply):
+        reply = contraction.sub("n't ", reply)
+    if possessive.search(reply):
+        reply = possessive.sub("'s ", reply)
+    if re.search(r' , ', reply):
+        reply = re.sub(r' , ', ', ', reply)
+    if re.search(r"\w ' ", reply):
+        reply = re.sub(r"\w ' ", "' ", reply)
+    if re.search(r' \? ', reply):
+        reply = re.sub(r'\?', '? ', reply)
+    return reply
+
+def format_user_input(reply):
+    if re.search(r"'", reply):
+        reply = re.sub(r"'", " ' ", reply)
+    if re.search(r'\?', reply):
+        reply = re.sub(r'\?', ' ? ', reply)
+    return reply
+
+
+
 def start_rapbot(model, chat_dictionary, p, device, transformer = False):
-    input_sent = input('User > ')
-    input_sent = input_sent.lower()
+    input_sentence = input('User > ')
+    input_sentence = input_sentence.lower()
+    input_sentence = format_user_input(input_sentence)
 
     chat_log = {}
     continue_convo = True
-    user_batch = mini_batchify(input_sent, chat_dictionary, device)
+    user_batch = mini_batchify(input_sentence, chat_dictionary, device)
 
     while continue_convo:
         context = chat_dictionary.v2t(user_batch['text_vecs'][0].tolist())
@@ -102,13 +135,14 @@ def start_rapbot(model, chat_dictionary, p, device, transformer = False):
 
         bot_reply = decoded_sent[0][1:-1]
         bot_reply_readable = chat_dictionary.v2t(bot_reply.tolist())
+        bot_reply_readable = format_chatbot_output(bot_reply_readable)
         print(BASH_FORMATTING['YELLOW'] + BASH_FORMATTING['BOLD']  + 'Aubrey: {}'.format(bot_reply_readable) + BASH_FORMATTING['END'])
         
         context += '\n ' + bot_reply_readable
 
         response = input('User > ')
-        if (response == 'q' or response == 'quit'):
-            break
+        if (response == 'q' or response == 'quit' or response == 'exit'):
+            continue_convo = False
 
         context += '\n ' + response
 
