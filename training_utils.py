@@ -73,9 +73,9 @@ class ChatDataset(Dataset):
 
             # train and valid have different key names for target
             if dt == 'train':
-                _tar_toked = RETOK.findall(sample['labels'][0]) + ['__end__']
+                _tar_toked = RETOK.findall(sample['labels']) + ['__end__']
             elif dt == 'valid':
-                _tar_toked = RETOK.findall(sample['eval_labels'][0]) + ['__end__']
+                _tar_toked = RETOK.findall(sample['eval_labels']) + ['__end__']
 
             _tar_toked_id = dictionary.t2v(_tar_toked)
 
