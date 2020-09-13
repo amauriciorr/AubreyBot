@@ -79,6 +79,19 @@ def get_train_args():
     args = parser.parse_args()
     return args
 
+def get_chat_args():
+    parser = argparse.ArgumentParser('Preferences for talking with your chatbot.')
+    parser.add_argument('--model_path',
+                        type='str',
+                        help='Specify path to trained chatbot model.')
+    # add argument for toggling nucleus sample vs beam search
+    parser.add_argument('--top_p',
+                        type=float,
+                        default=0.9,
+                        help='Top-p filter for output predicted probabilities.')
+    args = parser.parse_args()
+    return args
+
     '''
     ***
     TO-DO
