@@ -28,6 +28,10 @@ def get_train_args():
                         type=lambda s: s.lower().startswith('t'),
                         default=True,
                         help='Use CUDA when available.')
+    parser.add_argument('--use_BERT',
+                        type=lambda s: s.lower().startswith('t'),
+                        default=False,
+                        help='Use pretrained BERT for transfer learning.')
     parser.add_argument('--learning_rate',
                         type=float,
                         default=0.001,
@@ -72,14 +76,14 @@ def get_train_args():
                         type=int,
                         default=0.3,
                         help='Percentage of nodes to randomly ignore as part of Dropout method.')
+    parser.add_argument('--eps',
+                        type=float,
+                        default=1e-08,
+                        help='Adam\'s epsilon for numerical stability.')
     parser.add_argument('--save_dir',
                         type=str,
                         default='./models/',
                         help='Directory to save models.')
-    parser.add_argument('--use_BERT',
-                        type=lambda s: s.lower().startswith('t'),
-                        default=False,
-                        help='Use pretrained BERT for transfer learning.')
     args = parser.parse_args()
     return args
 
