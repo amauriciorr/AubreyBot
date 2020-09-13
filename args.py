@@ -76,6 +76,10 @@ def get_train_args():
                         type=str,
                         default='./models/',
                         help='Directory to save models.')
+    parser.add_argument('--use_BERT',
+                        type=lambda s: s.lower().startswith('t'),
+                        default=False,
+                        help='Use pretrained BERT for transfer learning.')
     args = parser.parse_args()
     return args
 
@@ -84,6 +88,10 @@ def get_chat_args():
     parser.add_argument('--model_path',
                         type=str,
                         help='Specify path to trained chatbot model.')
+    parser.add_argument('--vocab_path',
+                        type=str,
+                        default='./word_counts_dict.p',
+                        help='Specify path for ChatDictionary object.')
     # add argument for toggling nucleus sample vs beam search
     parser.add_argument('--top_p',
                         type=float,
