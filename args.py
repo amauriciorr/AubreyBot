@@ -89,6 +89,10 @@ def get_chat_args():
                         type=float,
                         default=0.9,
                         help='Top-p filter for output predicted probabilities.')
+    parser.add_argument('--with_cuda',
+                        type=lambda s: s.lower().startswith('t'),
+                        default=True,
+                        help='Use CUDA when available.')
     args = parser.parse_args()
     return args
 
