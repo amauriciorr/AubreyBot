@@ -26,16 +26,12 @@ class ChatDictionary(object):
         self.word2ind = {}  # word:index
         self.ind2word = {}  # index:word
         self.counts = {}  # word:count
-        self.word2ind['__null__'] = 0
-        self.word2ind['__start__'] = 1
-        self.word2ind['__end__'] = 2
-        self.word2ind['__unk__'] = 3
         # dict_raw = open(dict_file_path, 'r').readlines()
         dict_raw = pkl.load(open(dict_file_path, 'rb'))
 
         for i, kvp in enumerate(dict_raw.items()):
             _word, _count = kvp
-            self.word2ind[_word] = i + 4
+            self.word2ind[_word] = i
             self.ind2word[i] = _word
             self.counts[_word] = _count
 
@@ -107,7 +103,7 @@ def pad_tensor(tensors, sort=True, pad_token=0):
     output.fill_(pad_token)  # 0 is a pad token here
 
     for i, (tensor, length) in enumerate(zip(tensors, lengths)):
-        output[i, :length] = tensor
+        output[i,:length] = tensor
     return output, lengths
 
 def argsort(keys, *lists, descending=False):
@@ -242,7 +238,7 @@ class DecoderRNN(nn.Module):
         attn_w_log = []
 
         for i in range(seqlen):
-            decoder_output, decoder_hidden = self.gru(emb[:, i, :].unsqueeze(1), decoder_hidden)
+            decoder_output, decoder_hidden = self.gru(emb[:,i,:].unsqueeze(1), decoder_hidden)
             
             # compute attention at each time step
             decoder_output_attended, attn_weights = self.attention(decoder_output, decoder_hidden, 
@@ -378,12 +374,13 @@ class seq2seqTrainer:
 
     def train_model(self):
         self.model.to(self.device)
-        self.model.train()
+        
         best_val_loss = np.inf
         sum_loss = 0
         sum_tokens = 0
         for epoch in range(self.num_epochs):
             print(EPOCH_LOG.format(dt.datetime.now(), (epoch + 1), self.num_epochs))
+            self.model.train()
 
             for step, batch in enumerate(self.train_dataloader):
                 self.optimizer.zero_grad()
@@ -438,7 +435,7 @@ class seq2seqTrainer:
                 best_val_loss = avg_val_loss
                 formatted_ppl = format_perplexity(val_ppl)
                 self.models_dir += 'seq2seq_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
-                torch.save(self.model.save_dict(), self.models_dir)
+                torch.save(self.model.state_dict(), self.models_dir)
 
 
 ##### BERT MODEL(S) #####
