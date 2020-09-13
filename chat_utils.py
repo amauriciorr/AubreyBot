@@ -5,7 +5,18 @@ from training_utils import *
 # T0-D0
 # include Beam() class?
 # include nucleus sampling functions
-
+BASH_FORMATTING = {
+                   'PURPLE': '\033[95m',
+                   'CYAN': '\033[96m',
+                   'DARKCYAN': '\033[36m',
+                   'BLUE': '\033[94m',
+                   'GREEN': '\033[92m',
+                   'YELLOW': '\033[93m',
+                   'RED':'\033[91m',
+                   'BOLD': '\033[1m',
+                   'UNDERLINE': '\033[4m',
+                   'END': '\033[0m'
+}
 
 def top_p_filter(logits, p, filter_val=-float('inf')):
      logits_sorted, logits_sorted_idx = torch.sort(logits, descending = True)
@@ -91,7 +102,7 @@ def start_rapbot(model, chat_dictionary, p, device, transformer = False):
 
         bot_reply = decoded_sent[0][1:-1]
         bot_reply_readable = chat_dictionary.v2t(bot_reply.tolist())
-        print('Chatty boy: {}'.format(bot_reply_readable))
+        print(BASH_FORMATTING['YELLOW'] + BASH_FORMATTING['BOLD']  + 'Aubrey: {}'.format(bot_reply_readable) + BASH_FORMATTING['END'])
         
         context += '\n ' + bot_reply_readable
 
