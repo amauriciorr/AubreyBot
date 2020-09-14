@@ -38,15 +38,16 @@ if __name__ == "__main__":
     else:
         train_dataset = tokenize_for_BERT('./train_lyrics.jsonl')
         valid_dataset = tokenize_for_BERT('./valid_lyrics.jsonl', 'valid')
-
+        print('\nInitializing BERT...\n')
         bert2bert_model = BERT2BERT(training_args.num_epochs, training_args.batch_size, current_device)
-        optimizer = AdamW(params=[p for p in bert2bert_model.model.parameters() if p.requires_grad], 
-                          lr=training_args.learning_rate, eps=training_args.eps,
-                          weight_decay=training_args.weight_decay)
-        # optimiser = torch.optim.Adam([p for p in bert2bert_model.parameters() if p.requires_grad],
-                                     # lr=training_args.learning_rate, eps=training_args.eps,
-                                     # weight_decay=training_args.weight_decay)
-
+        # optimizer = AdamW(params=[p for p in bert2bert_model.model.parameters() if p.requires_grad], 
+        #                   lr=training_args.learning_rate, eps=training_args.eps,
+        #                   weight_decay=training_args.weight_decay)
+        print('\nSetting optimizer...\n')
+        optimizer = torch.optim.Adam([p for p in bert2bert_model.model.parameters() if p.requires_grad],
+                                     lr=training_args.learning_rate, eps=training_args.eps,
+                                     weight_decay=training_args.weight_decay)
+        print('\nTraining BERT2BERT...\n')
         bert2bert_model.train_bert(train_dataset, valid_dataset, criterion, optimizer)
 
 
