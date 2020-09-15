@@ -20,10 +20,6 @@ def get_setup_args():
 
 def get_train_args():
     parser = argparse.ArgumentParser('Train a chatbot on lyrics')
-    parser.add_argument('--num_epochs',
-                        type=int,
-                        default=30,
-                        help='Number of epochs to train model.')
     parser.add_argument('--with_cuda',
                         type=lambda s: s.lower().startswith('t'),
                         default=True,
@@ -32,6 +28,10 @@ def get_train_args():
                         type=lambda s: s.lower().startswith('t'),
                         default=False,
                         help='Use pretrained BERT for transfer learning.')
+    parser.add_argument('--num_epochs',
+                        type=int,
+                        default=30,
+                        help='Number of epochs to train model.')
     parser.add_argument('--learning_rate',
                         type=float,
                         default=0.001,
@@ -89,6 +89,14 @@ def get_train_args():
 
 def get_chat_args():
     parser = argparse.ArgumentParser('Preferences for talking with your chatbot.')
+    parser.add_argument('--with_cuda',
+                        type=lambda s: s.lower().startswith('t'),
+                        default=True,
+                        help='Use CUDA when available.')
+     parser.add_argument('--top_p',
+                        type=float,
+                        default=0.9,
+                        help='Top-p filter for output predicted probabilities.')
     parser.add_argument('--model_path',
                         type=str,
                         help='Specify path to trained chatbot model.')
@@ -97,23 +105,6 @@ def get_chat_args():
                         default='./word_counts_dict.p',
                         help='Specify path for ChatDictionary object.')
     # add argument for toggling nucleus sample vs beam search
-    parser.add_argument('--top_p',
-                        type=float,
-                        default=0.9,
-                        help='Top-p filter for output predicted probabilities.')
-    parser.add_argument('--with_cuda',
-                        type=lambda s: s.lower().startswith('t'),
-                        default=True,
-                        help='Use CUDA when available.')
+   
     args = parser.parse_args()
     return args
-
-    '''
-    ***
-    TO-DO
-    ADD CONFIG FOR VARIOUS PARAMETERS
-    OPTIMIZER
-    LOSS FN
-    ETC.
-    ***
-    '''
