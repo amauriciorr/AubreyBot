@@ -4,8 +4,6 @@ from training_utils import *
 from args import get_chat_args
 
 # TO-DO
-# simple script to run chatbot
-# requires trained model
 # args should specify which approach used to generate responses
 # i.e. beam search or nucleus sampling
 
