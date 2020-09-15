@@ -12,12 +12,10 @@ if __name__ == "__main__":
 
     if not training_args.use_BERT:
         chat_dict = ChatDictionary('./word_counts_dict.p')
+        print('Creating dataset...\n')
         train_dataset = ChatDataset(chat_dict, './train_lyrics.jsonl')
         valid_dataset = ChatDataset(chat_dict, './valid_lyrics.jsonl', 'valid')
-        
-
-        
-
+        print('\nCreating dataloader...\n')
         train_dataloader = build_dataloader(train_dataset, batchify, training_args.batch_size)
         valid_dataloader = build_dataloader(valid_dataset, batchify, training_args.batch_size,
                                             shuffle=False)
@@ -25,7 +23,7 @@ if __name__ == "__main__":
         opts = set_model_config(chat_dict, training_args.hidden_size, training_args.embedding_size,
                                 training_args.num_layers_enc, training_args.num_layers_dec,
                                 training_args.dropout)
-        
+        print('\nInitializing seq2seq model...\n')
         model = seq2seq(opts)
         model.to(current_device)
         optimizer = torch.optim.Adam(model.parameters(), lr=training_args.learning_rate, 
@@ -33,12 +31,12 @@ if __name__ == "__main__":
         model_trainer = seq2seqTrainer(model, train_dataloader, valid_dataloader, criterion,
                                        optimizer, training_args.num_epochs, current_device, 
                                        training_args.save_dir)
-
+        print('\nBegin training model...\n')
         model_trainer.train_model()
     else:
         train_dataset = tokenize_for_BERT('./train_lyrics.jsonl')
         valid_dataset = tokenize_for_BERT('./valid_lyrics.jsonl', 'valid')
-        print('\nInitializing BERT...\n')
+        print('Initializing BERT...\n')
         bert2bert_model = BERT2BERT(training_args.num_epochs, training_args.batch_size, current_device)
         # optimizer = AdamW(params=[p for p in bert2bert_model.model.parameters() if p.requires_grad], 
         #                   lr=training_args.learning_rate, eps=training_args.eps,
