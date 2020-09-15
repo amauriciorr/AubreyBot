@@ -512,10 +512,9 @@ class BERT2BERT(object):
                 optimizer.zero_grad()
                 batch = tuple(t.to(self.device) for t in batch)
                 input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
-                loss, logits = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
+                loss = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
                                            attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
-                                           labels=lm_labels)[:2]
-                loss = criterion(logits, lm_labels.view(-1))
+                                           labels=lm_labels)[0]
                 sum_loss += loss.item()
 
                 num_tokens = lm_labels.ne(0).long().sum().item()
@@ -535,8 +534,7 @@ class BERT2BERT(object):
                 input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
                 loss, logits = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
                                            attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
-                                           labels=lm_labels)[:2]
-                loss = criterion(logits, lm_labels.view(-1))
+                                           labels=lm_labels)[0]
                 val_loss += loss.item()
                 
                 num_tokens = lm_labels.ne(0).long().sum().item()
