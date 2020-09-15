@@ -42,12 +42,6 @@ def get_train_args():
                         default=0,
                         help='L2 regularization penalty. Causes weights to exponentially decay\
                               to zero.')
-    # parser.add_argument('--verbose',
-    #                    type=lambda s: s.lower().startswith('t'),
-    #                    default=True,
-    #                    help='Print logging details to console. Includes epoch number, 
-    #                          loss, perplexity.')
-    #LOOK INTO WHAT EXACTLY I WANT TO INCLUDE IN VERBOSE LOGGER ???
     parser.add_argument('--batch_size',
                         type=int,
                         default=32,
