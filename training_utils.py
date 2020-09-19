@@ -551,4 +551,4 @@ class BERT2BERT(object):
                 best_val_loss = avg_val_loss
                 formatted_ppl = format_perplexity(val_ppl)
                 save_path = self.models_dir +'bert2bert_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
-                torch.save(self.model.state_dict(), save_path)
+                self.model.save_pretrained(save_path)
