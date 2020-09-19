@@ -543,9 +543,9 @@ class BERT2BERT(object):
                 num_tokens = lm_labels.ne(0).long().sum().item()
                 val_tokens += num_tokens
                 loss /= num_tokens
-            avg_train_loss = sum_loss / sum_tokens
+            avg_val_loss = val_loss / val_tokens
             val_ppl = calculate_perplexity(avg_val_loss)
-            scheduler.step(avg_train_loss)
+            scheduler.step(avg_val_loss)
             print('{} | Validation perplexity achieved: {}'.format(dt.datetime.now(), val_ppl))
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
