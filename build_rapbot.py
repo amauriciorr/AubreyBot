@@ -2,6 +2,7 @@ import os
 import pickle as pkl
 from args import get_train_args
 from training_utils import *
+import logging
 
 if __name__ == "__main__":
     training_args = get_train_args()
@@ -9,6 +10,13 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss(ignore_index=0, reduction='sum')
     if not os.path.exists(training_args.save_dir):
         os.makedirs(training_args.save_dir)
+
+    if training_args.use_logging:
+        log_filename = str(dt.datetime.now(tz=TIMEZONE))
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
+        logger = logging.getLogger()
+        logger.addHandler(logging.FileHandler(log_filename+'.log', 'a'))
+        print = logger.info
 
     if not training_args.use_BERT:
         chat_dict = ChatDictionary('./word_counts_dict.p')
