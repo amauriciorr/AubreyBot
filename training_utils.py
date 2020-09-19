@@ -537,7 +537,7 @@ class BERT2BERT(object):
                                            attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
                                            labels=lm_labels)[:2]
                 scores = logits.view(-1, logits.size(-1))
-                loss = criterion(scores, lm_labels)
+                loss = criterion(scores, lm_labels.view(-1))
                 val_loss += loss.item()
                 
                 num_tokens = lm_labels.ne(0).long().sum().item()
