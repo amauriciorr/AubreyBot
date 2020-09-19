@@ -543,7 +543,6 @@ class BERT2BERT(object):
                 
                 num_tokens = lm_labels.ne(0).long().sum().item()
                 val_tokens += num_tokens
-                loss /= num_tokens
             avg_val_loss = val_loss / val_tokens
             val_ppl = calculate_perplexity(avg_val_loss)
             scheduler.step(avg_val_loss)
@@ -553,6 +552,3 @@ class BERT2BERT(object):
                 formatted_ppl = format_perplexity(val_ppl)
                 save_path = self.models_dir +'bert2bert_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
                 torch.save(self.model.state_dict(), save_path)
-
-
-
