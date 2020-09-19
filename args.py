@@ -79,6 +79,10 @@ def get_train_args():
                         default=128,
                         help='Max sequence length for BERT tokenizing and subsequent encoding. Note: \
                               pretrained BERT can only handle up to 512 tokens per sequence at once.')
+    parser.add_argument('--use_logging',
+                        type=lambda s: s.lower().startswith('t'),
+                        default=False,
+                        help='Save stdout to a log file.')
     parser.add_argument('--save_dir',
                         type=str,
                         default='./models/',
