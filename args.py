@@ -74,6 +74,11 @@ def get_train_args():
                         type=float,
                         default=1e-08,
                         help='Adam\'s epsilon for numerical stability.')
+    parser.add_argument('--max_sentence_length',
+                        type=int,
+                        default=128,
+                        help='Max sequence length for BERT tokenizing and subsequent encoding. Note: \
+                              pretrained BERT can only handle up to 512 tokens per sequence at once.')
     parser.add_argument('--save_dir',
                         type=str,
                         default='./models/',
