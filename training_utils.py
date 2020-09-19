@@ -485,11 +485,12 @@ def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128)
     return TensorDataset(input_ids_encode, attention_masks_encode, input_ids_decode, attention_masks_decode, lm_labels)
 
 class BERT2BERT(object):
-    def __init__(self, num_epochs, batch_size, device):
+    def __init__(self, num_epochs, batch_size, device, models_dir):
         self.model = EncoderDecoderModel.from_encoder_decoder_pretrained('bert-base-uncased', 'bert-base-uncased')
         self.device = device
         self.num_epochs = num_epochs
         self.batch_size = batch_size
+        self.models_dir = models_dir
 
     def train_bert(self, train_dataset, valid_dataset, criterion, optimizer):
         self.model.to(self.device)
