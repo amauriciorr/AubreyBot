@@ -10,7 +10,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader, TensorDataset, RandomSampler
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-from transformers import BertTokenizer, EncoderDecoderConfig, EncoderDecoderModel, AdamW
+from transformers import BertTokenizer, EncoderDecoderConfig, EncoderDecoderModel
 # from processing_utils import RETOK
 # commented above, added below to run on GCP without needing to import
 # processing_utils, i.e. installing lyrics_genius library
@@ -460,11 +460,10 @@ def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128)
             # choice of 128 was mostly for hardware limitations, i.e. a single GPU :(
             continue
 
-        text_tokenized += ['[PAD]', ] * (max_sentence_length - text_tokenized_length)
         input_id_enc = tokenizer.encode(text_tokenized)
-        labels_tokenized += ['[PAD]', ] * (max_sentence_length - labels_tokenized_length )
+        input_id_enc += [0,] * (max_sentence_length - text_tokenized_length)
         input_id_dec = tokenizer.encode(labels_tokenized)
-        
+        input_id_dec += [0,] * (max_sentence_length - labels_tokenized_length )
 
         lm_label = copy.deepcopy(input_id_dec)
         attn_mask_enc = [float(i>0) for i in input_id_enc]
