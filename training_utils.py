@@ -460,9 +460,11 @@ def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128)
         # original plan was to simply omit larger sequences but let's try truncating.
 
         if (text_tokenized_length > max_sentence_length):
-            text_tokenized = text_tokenized[:max_sentence_length-2] 
+            text_tokenized = text_tokenized[:max_sentence_length-4] 
+            text_tokenized_length = len(text_tokenized) + 2
         elif (labels_tokenized_length > max_sentence_length):
-            labels_tokenized = labels_tokenized[:max_sentence_length-2]
+            labels_tokenized = labels_tokenized[:max_sentence_length-4]
+            labels_tokenized_length = len(labels_tokenized) + 2
             
         input_id_enc = tokenizer.encode(text_tokenized)
         input_id_enc += [0,] * (max_sentence_length - text_tokenized_length)
