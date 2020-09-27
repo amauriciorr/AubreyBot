@@ -63,7 +63,6 @@ To stop talking to Aubrey at any moment, enter `q` or `quit` in the chat.
 ### Attention
 * https://lilianweng.github.io/lil-log/2018/06/24/attention-attention.html#transformer
 * https://machinetalk.org/2019/03/29/neural-machine-translation-with-attention-mechanism/
-* https://machinetalk.org/2019/03/29/neural-machine-translation-with-attention-mechanism/
 ### Transformers
 * https://towardsdatascience.com/transformers-141e32e69591
 * http://jalammar.github.io/illustrated-transformer/
