@@ -28,6 +28,8 @@ Alternatively, if you've already pulled lyrics through Genius' API, you can run
 `python setup.py --download_lyrics false --load_path ./path/to/your/lyrics.json`
 
 
+To clarify which flags are available for reach file, just run `python file_name.py -h`
+
 ### Training Aubrey
 To start training your chatbot run `python build_rapbot.py`. Files preprocessed in the previous step will automatically be read. 
 
