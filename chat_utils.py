@@ -2,6 +2,7 @@ import re
 import torch.nn.functional as F
 from training_utils import *
 
+
 # T0-D0
 # include Beam() class?
 # include nucleus sampling functions
@@ -117,6 +118,8 @@ def format_user_input(reply):
         reply = re.sub(r'\?', ' ? ', reply)
     return reply
 
+def format_BERT_ouput(reply):
+    pass
 
 
 def start_rapbot(model, chat_dictionary, p, device, transformer = False):
@@ -148,3 +151,17 @@ def start_rapbot(model, chat_dictionary, p, device, transformer = False):
 
         user_batch = mini_batchify(context, chat_dictionary, device)
     return context
+
+# WIP
+# have not yet figured out what I want to do with bert
+def bert_bot(model, tokenizer):
+    '''
+    input_sentence = input('User >')
+    input_sentence = input_sentence.lower()
+    input_sentence = torch.LongTensor(tokenizer.encode(input_sentence))
+    continue_convo = True
+    while continue_convo:
+        bot_reply = model.generate(input_sentence)
+        bot_reply = tokenizer.decode(bot_reply.squeeze())
+    '''
+    pass
