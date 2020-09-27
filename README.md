@@ -3,7 +3,9 @@ Create your own chatbot trained on lyrics pulled from [Genius](https://genius.co
 
 
 ## Getting started
-You'll need Genius API keys in order to collect a musician's lyrics. You can create your own keys [here](https://docs.genius.com/#/getting-started-h1). Additionally, access to a GPU in order to train your chatbot. [Google Cloud](https://cloud.google.com/) and [Google Colab](https://colab.research.google.com/notebooks/intro.ipynb) both provide access to GPUs. Colab is free to use while Cloud gives you $300 free credits to use before charging you.
+You'll need Genius API keys in order to collect a musician's lyrics. You can create your own keys [here](https://docs.genius.com/#/getting-started-h1). Make sure to save your generated keys in a file named `genius_keys.py`. Your secret access token must be saved as `GENIUS_ACCESS_TOKEN='YOUR-ACCESS-TOKEN-HERE'` within this file.
+
+ Additionally, access to a GPU in order to train your chatbot. [Google Cloud](https://cloud.google.com/) and [Google Colab](https://colab.research.google.com/notebooks/intro.ipynb) both provide access to GPUs. Colab is free to use while Cloud gives you $300 free credits to use before charging you.
 
 ### Install required packages
 Run `pip install -r requirements`
