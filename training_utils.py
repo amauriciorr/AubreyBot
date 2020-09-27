@@ -10,7 +10,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader, TensorDataset, RandomSampler
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-from transformers import BertTokenizer, EncoderDecoderConfig, EncoderDecoderModel
+from transformers import BertTokenizer, EncoderDecoderConfig, EncoderDecoderModel, AdamW
 
 # from processing_utils import RETOK
 # commented above, added below to run on GCP without needing to import
@@ -519,6 +519,7 @@ class BERT2BERT(object):
 
             for step, batch in enumerate(train_dataloader):
                 optimizer.zero_grad()
+                self.model.zero_grad()
                 batch = tuple(t.to(self.device) for t in batch)
                 input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
                 _, logits = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
