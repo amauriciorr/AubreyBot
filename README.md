@@ -19,7 +19,7 @@ Run `pip install -r requirements`
 * `processing_utils.py`: utilities for downloading and processing your lyrics
 * `chat_utils.py`: utilities for how chatbot generates responses
 
-There are a variety of flags available for each non-utility file. To clarify which flags are available for reach file, just run `python file_name.py -h`
+There are a variety of flags available for each non-utility file. To clarify which flags are available for each, just run `python file_name.py -h`
 
 ### Downloading and preprocessing
 Before training your chatbot, you will first need to pull lyrics from Genius, you can do this like so 
