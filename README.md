@@ -19,6 +19,7 @@ Run `pip install -r requirements`
 * `processing_utils.py`: utilities for downloading and processing your lyrics
 * `chat_utils.py`: utilities for how chatbot generates responses
 
+There are a variety of flags available for each non-utility file. To clarify which flags are available for reach file, just run `python file_name.py -h`
 
 ### Downloading and preprocessing
 Before training your chatbot, you will first need to pull lyrics from Genius, you can do this like so 
@@ -29,8 +30,6 @@ Alternatively, if you've already pulled lyrics through Genius' API, you can run
 
 `python setup.py --download_lyrics false --load_path ./path/to/your/lyrics.json`
 
-
-To clarify which flags are available for reach file, just run `python file_name.py -h`
 
 ### Training Aubrey
 To start training your chatbot run `python build_rapbot.py`. Files preprocessed in the previous step will automatically be read. 
