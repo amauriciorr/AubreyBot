@@ -456,10 +456,10 @@ def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128)
 
         labels_tokenized_length = len(labels_tokenized) + 2
 
-        # if (text_tokenized_length > max_sentence_length) or (labels_tokenized_length > max_sentence_length):
-            # BERT can only handle up to 512 tokens at once on pretrained.
-            # choice of 128 was mostly for hardware limitations, i.e. a single GPU :(
-            # continue
+        # truncate any sentences longer than the max length 
+        # rather than skipping over them.
+        # BERT can only handle up to 512 tokens at once on pretrained.
+        # choice of 128 was mostly for hardware limitations, i.e. a single GPU :(
         if text_tokenized_length > max_sentence_length:
             text_tokenized = text_tokenized[:max_sentence_length-4]
             text_tokenized_length = max_sentence_length - 2
@@ -474,8 +474,8 @@ def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128)
         input_id_dec += [0,] * (max_sentence_length - labels_tokenized_length)
 
         lm_label = copy.deepcopy(input_id_dec)
-        lm_label = lm_label[:-1]
-        lm_label.insert(0, 0)
+        # lm_label = lm_label[:-1]
+        # lm_label.insert(0, 0)
         attn_mask_enc = [float(i>0) for i in input_id_enc]
         attn_mask_dec = [float(i>0) for i in input_id_dec]
 
