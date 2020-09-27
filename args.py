@@ -94,7 +94,7 @@ def get_chat_args():
     parser = argparse.ArgumentParser('Preferences for talking with your chatbot.')
     parser.add_argument('--with_cuda',
                         type=lambda s: s.lower().startswith('t'),
-                        default=True,
+                        default=False,
                         help='Use CUDA when available.')
     parser.add_argument('--use_BERT',
                         type=lambda s: s.lower().startswith('t'),
