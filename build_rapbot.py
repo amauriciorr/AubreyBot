@@ -55,9 +55,17 @@ if __name__ == "__main__":
         print('\n{} | Initializing BERT...\n'.format(dt.datetime.now(tz=TIMEZONE)))
         bert2bert_model = BERT2BERT(training_args.num_epochs, training_args.batch_size, current_device,
                                     training_args.save_dir)
-        optimizer = torch.optim.Adam([p for p in bert2bert_model.model.parameters() if p.requires_grad],
-                                     lr=training_args.learning_rate, eps=training_args.eps,
-                                     weight_decay=training_args.weight_decay)
+        param_optimizer = list(bert2bert_model.model.named_parameters())
+        no_decay = ['bias', 'gamma', 'beta']
+        # seperate decay
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+            'weight_decay_rate': 0.01},
+            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+            'weight_decay_rate': 0.0}]
+
+        optimizer = AdamW(optimizer_grouped_parameters, lr=training_args.learning_rate, 
+                          eps=training_args.eps)
 
         print('\n {} | Training BERT2BERT...\n'.format(dt.datetime.now(tz=TIMEZONE)))
         bert2bert_model.train_bert(train_dataset, valid_dataset, criterion, optimizer)
