@@ -14,8 +14,8 @@ Run `pip install -r requirements`
 * `setup.py`: handles downloading, preprocessing, and creating both your training and validation datasets. 
 * `build_rapbot.py`: trains your chatbot
 * `Aubrey.py`: used for loading your pretrained model and starting a conversation with your chatbot
-*`processing_utils.py`: utilities for downloading and processing your lyrics
-*`chat_utils.py`: utilities for how chatbot generates responses
+* `processing_utils.py`: utilities for downloading and processing your lyrics
+* `chat_utils.py`: utilities for how chatbot generates responses
 
 
 ### Downloading and preprocessing
