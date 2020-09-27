@@ -1,5 +1,4 @@
-# AubreyBot
-![aubrey](/assets/IMG_4077.jpg)
+# AubreyBot ![aubrey](/assets/IMG_4077.jpg)
 Create your own chatbot trained on lyrics pulled from [Genius](https://genius.com/)! This project was named after Aubrey "Drake" Graham as his lyrics were the first I chose to bring this chatbot to life. 
 
 
