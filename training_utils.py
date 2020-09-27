@@ -11,6 +11,7 @@ from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader, TensorDataset, RandomSampler
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from transformers import BertTokenizer, EncoderDecoderConfig, EncoderDecoderModel
+
 # from processing_utils import RETOK
 # commented above, added below to run on GCP without needing to import
 # processing_utils, i.e. installing lyrics_genius library
@@ -432,7 +433,7 @@ class seq2seqTrainer:
                 save_path = self.models_dir +'seq2seq_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
                 torch.save(self.model.state_dict(), save_path)
 
-
+# BERT WIP
 ##### BERT MODEL(S) #####
 def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128):
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
@@ -455,16 +456,17 @@ def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128)
 
         labels_tokenized_length = len(labels_tokenized) + 2
 
-        # BERT can only handle up to 512 tokens at once on pretrained.
-        # choice of 128 was mostly for hardware limitations, i.e. a single GPU :(
-        # original plan was to simply omit larger sequences but let's try truncating.
+        # if (text_tokenized_length > max_sentence_length) or (labels_tokenized_length > max_sentence_length):
+            # BERT can only handle up to 512 tokens at once on pretrained.
+            # choice of 128 was mostly for hardware limitations, i.e. a single GPU :(
+            # continue
+        if text_tokenized_length > max_sentence_length:
+            text_tokenized = text_tokenized[:max_sentence_length-4]
+            text_tokenized_length = max_sentence_length - 2
 
-        if (text_tokenized_length > max_sentence_length):
-            text_tokenized = text_tokenized[:max_sentence_length-4] 
-            text_tokenized_length = len(text_tokenized) + 2
-        elif (labels_tokenized_length > max_sentence_length):
+        if labels_tokenized_length > max_sentence_length:
             labels_tokenized = labels_tokenized[:max_sentence_length-4]
-            labels_tokenized_length = len(labels_tokenized) + 2
+            labels_tokenized_length = max_sentence_length -2
             
         input_id_enc = tokenizer.encode(text_tokenized)
         input_id_enc += [0,] * (max_sentence_length - text_tokenized_length)
