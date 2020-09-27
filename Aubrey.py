@@ -12,11 +12,20 @@ from args import get_chat_args
 if __name__ == '__main__':
     chatbot_args = get_chat_args()
     current_device = torch.device("cuda" if chatbot_args.with_cuda else "cpu")
-    chat_dict = ChatDictionary(chatbot_args.vocab_path)
-    opts = set_model_config(chat_dict)
-    model_checkpoint = torch.load(chatbot_args.model_path, map_location = current_device)
-    chatbot = seq2seq(opts)
-    chatbot.load_state_dict(model_checkpoint)
-    chatbot.to(current_device)
-    chatbot.eval()
-    start_rapbot(chatbot, chat_dict, chatbot_args.top_p, current_device, transformer = False)
+    if not chatbot_args.use_BERT:
+        chat_dict = ChatDictionary(chatbot_args.vocab_path)
+        opts = set_model_config(chat_dict)
+        model_checkpoint = torch.load(chatbot_args.model_path, map_location = current_device)
+        chatbot = seq2seq(opts)
+        chatbot.load_state_dict(model_checkpoint)
+        chatbot.to(current_device)
+        chatbot.eval()
+        start_rapbot(chatbot, chat_dict, chatbot_args.top_p, current_device, transformer = False)
+    else:
+        # WIP
+        print('BERT2BERT model not yet ready')
+        '''
+        chatbot = EncoderDecoderModel.from_pretrained(chatbot_args.model_path)
+        bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        bert_bot(chatbot, bert_tokenizer)
+        '''
