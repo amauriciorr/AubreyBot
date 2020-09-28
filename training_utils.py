@@ -436,7 +436,7 @@ class seq2seqTrainer:
 # BERT WIP
 ##### BERT MODEL(S) #####
 def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128):
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     json_text = open(dataset_file_path, 'r').readlines()
 
     input_ids_encode = []
@@ -503,7 +503,6 @@ class BERT2BERT(object):
 
     def train_bert(self, train_dataset, valid_dataset, criterion, optimizer):
         self.model.to(self.device)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=10)
         train_sampler = RandomSampler(train_dataset)
         valid_sampler = RandomSampler(valid_dataset)
 
@@ -555,7 +554,6 @@ class BERT2BERT(object):
                 val_tokens += num_tokens
             avg_val_loss = val_loss / val_tokens
             val_ppl = calculate_perplexity(avg_val_loss)
-            scheduler.step(avg_val_loss)
             print('{} | Validation perplexity achieved: {}'.format(dt.datetime.now(), val_ppl))
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
