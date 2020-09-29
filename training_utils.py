@@ -526,7 +526,15 @@ class BERT2BERT(object):
                 loss = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
                                            attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
                                            labels=lm_labels)[0]
-
+                # will need to research this some more:
+                # loss output by EncoderDecoderModel is "language model loss", which
+                # I interpret as loss for masked token but not 100% sure yet. if it is this loss
+                # it may not be the best approach to adjust gradients based on this loss.
+                # it is possible to use cross-entropy loss with the logits that are output from this 
+                # model as well. originally had used CE loss but when my BERT2BERT model
+                # was generating repeated tokens for every input, I suspected it was training incorrectly.
+                # this approach more or less corrects that. however, either way there is a repetition_penalty
+                # argument for model.generate() that accounts for this. 
                 loss_set.append(loss.item())
                 loss.backward()
                 optimizer.step()
