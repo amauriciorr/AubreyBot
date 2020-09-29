@@ -172,6 +172,8 @@ REMEMBER: REACH OUT TO PROF. CHO OR TAs TO CONSULT ON BEST WAY TO CITE THEIR WOR
 ***
 '''
 
+# encoder, decoder, and attention layer were implemented by DS-GA1011 
+# instructors used here
 
 class EncoderRNN(nn.Module):
     """Encodes the input context."""
@@ -318,6 +320,8 @@ def set_model_config(chat_dictionary, hidden_size=512, embedding_size=256,
     # opts['encoder_shared_lt'] = encoder_shared_lt
 
     return opts
+
+
 
 class seq2seq(nn.Module):
     """
