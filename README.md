@@ -42,7 +42,7 @@ There are a variety of flags to adjust the neural network training and architect
 * `--batch_size`: number of training examples used in single iteraiton. This is set to 32 by default
 * `learning_rate`: rate at which to adjust weights when doing gradient descent
 * `--save_dir`: directory to save your trained model. By default, this is set to `./models/`. This folder will be created for you if it does not exist.
-* [WIP] ~~`--use_BERT`: use transfer learning to train your chatbot using an encoder-decoder BERT model~~
+* `--use_BERT`: use transfer learning to train your chatbot using BERT2BERT, i.e. use BERT for both encoder and decoder
 
 ### Talking to Aubrey
 
@@ -72,3 +72,4 @@ To stop talking to Aubrey at any moment, enter `q` or `quit` in the chat.
 * https://arxiv.org/abs/1810.04805
 * https://huggingface.co/transformers/model_doc/bert.html
 * https://towardsdatascience.com/bert-explained-state-of-the-art-language-model-for-nlp-f8b21a9b6270
+* https://huggingface.co/transformers/model_doc/bertgeneration.html
