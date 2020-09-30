@@ -52,8 +52,9 @@ This will automatically load the model trained from the previous step along with
 
 ![aubrey_chatlog](/assets/chatting_with_aubrey.gif)
 
-To stop talking to Aubrey at any moment, enter `q` or `quit` in the chat. 
+*Above was generated from learning the embedding representation from scratch. Using BERT for transfer learning has yet to yield anything close to a complete thought*
 
+To stop talking to Aubrey at any moment, enter `q` or `quit` in the chat. 
 
 
 
