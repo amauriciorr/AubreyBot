@@ -22,10 +22,7 @@ if __name__ == '__main__':
         chatbot.eval()
         start_rapbot(chatbot, chat_dict, chatbot_args.top_p, current_device, transformer = False)
     else:
-        # WIP
-        print('BERT2BERT model not yet ready')
-        '''
         chatbot = EncoderDecoderModel.from_pretrained(chatbot_args.model_path)
         bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        bert_bot(chatbot, bert_tokenizer)
-        '''
+        bert_bot(chatbot, bert_tokenizer, chatbot_args.top_k, chatbot_args.top_p,
+                 chatbot_args.temperature, chatbot_args.repetition_penalty)
