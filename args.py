@@ -100,17 +100,35 @@ def get_chat_args():
                         type=lambda s: s.lower().startswith('t'),
                         default=False,
                         help='Use pretrained BERT2BERT model for chatbot')
+    parser.add_argument('--repetition_penalty',
+                        type=float,
+                        default=1.0,
+                        help='Penalized sampling parameter, i.e. discount scores of previously \
+                              generated tokens')
+    parser.add_argument('--temperature',
+                        type=float,
+                        default=1.0,
+                        help='Value used for next token probabilities.')
     parser.add_argument('--top_p',
                         type=float,
                         default=0.9,
                         help='Top-p filter for output predicted probabilities.')
+    parser.add_argument('--top_k',
+                        type=int,
+                        default=50,
+                        help='Number of highest probability vocabulary tokens to keep.')
+    parser.add_argument('--no_repeat_ngram_size',
+                        type=int,
+                        default=0,
+                        help='N-gram of specified size can only occur once.')
     parser.add_argument('--model_path',
                         type=str,
                         help='Specify path to trained chatbot model.')
     parser.add_argument('--vocab_path',
                         type=str,
                         default='./word_counts_dict.p',
-                        help='Specify path for ChatDictionary object.')
+                        help='Specify path for ChatDictionary object. NOTE: this is not used with\
+                              BERT. This is for when you\'ve trained your own embedding representation.')
     # add argument for toggling nucleus sample vs beam search
    
     args = parser.parse_args()
