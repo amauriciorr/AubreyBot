@@ -4,8 +4,10 @@ from training_utils import *
 
 
 # T0-D0
-# include Beam() class?
+# add beam search class?
 # include nucleus sampling functions
+# for embedding representation
+# already built-in for BERT
 BASH_FORMATTING = {
                    'PURPLE': '\033[95m',
                    'CYAN': '\033[96m',
@@ -119,7 +121,10 @@ def format_user_input(reply):
     return reply
 
 def format_BERT_ouput(reply):
-    pass
+    if re.search(r'\[SEP\]|\[CLS\]|\[PAD\]', reply):
+        reply = re.sub(r'\s?\[SEP\]\s?', '.', reply)
+        reply = re.sub(r'\[CLS\]|\[PAD\]', '', reply)
+    return reply
 
 
 def start_rapbot(model, chat_dictionary, p, device, transformer = False):
@@ -127,7 +132,6 @@ def start_rapbot(model, chat_dictionary, p, device, transformer = False):
     input_sentence = input_sentence.lower()
     input_sentence = format_user_input(input_sentence)
 
-    chat_log = {}
     continue_convo = True
     user_batch = mini_batchify(input_sentence, chat_dictionary, device)
 
@@ -150,18 +154,30 @@ def start_rapbot(model, chat_dictionary, p, device, transformer = False):
         context += '\n ' + response
 
         user_batch = mini_batchify(context, chat_dictionary, device)
+        # need to test out without context...?
+        # maybe add --feed_context flag to this?
+        # user_batch = mini_batchify(response, chat_dictionary, device)
     return context
 
-# WIP
-# have not yet figured out what I want to do with bert
-def bert_bot(model, tokenizer):
-    '''
-    input_sentence = input('User >')
+
+def bert_bot(model, tokenizer, top_k, top_p, temperature, repetition_penalty):
+    input_sentence = input('User > ')
     input_sentence = input_sentence.lower()
-    input_sentence = torch.LongTensor(tokenizer.encode(input_sentence))
+    input_sentence = torch.LongTensor(tokenizer.encode(input_sentence)).unsqueeze(0)
     continue_convo = True
     while continue_convo:
-        bot_reply = model.generate(input_sentence)
+        context = input_sentence.detach().clone()
+        context = tokenizer.decode(input_sentence.squeeze())
+        bot_reply = model.generate(input_sentence, decoder_start_token_id=101, top_k=top_k,
+                                   top_p=top_p, temperature=temperature, repetition_penalty=repetition_penalty)
         bot_reply = tokenizer.decode(bot_reply.squeeze())
-    '''
-    pass
+        bot_reply = format_BERT_ouput(bot_reply)
+        context += bot_reply
+        print(BASH_FORMATTING['YELLOW'] + BASH_FORMATTING['BOLD']  + 'Aubrey: {}'.format(bot_reply) + BASH_FORMATTING['END'])
+        response = input('User > ')
+        if (response == 'q' or response == 'quit' or response == 'exit'):
+            continue_convo = False
+        context += response
+        input_sentence = torch.LongTensor(tokenizer.encode(context)).unsqueeze(0)
+
+
