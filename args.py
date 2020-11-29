@@ -24,17 +24,17 @@ def get_train_args():
                         type=lambda s: s.lower().startswith('t'),
                         default=True,
                         help='Use CUDA when available.')
-    parser.add_argument('--use_BERT',
-                        type=lambda s: s.lower().startswith('t'),
-                        default=False,
-                        help='Use pretrained BERT for transfer learning.')
+    parser.add_argument('--pretrained_model',
+                        type=str,
+                        default=None,
+                        help='Model to use for transfer learning. Currently \'BERT\' and \'GPT2\' are supported.')
     parser.add_argument('--num_epochs',
                         type=int,
                         default=30,
                         help='Number of epochs to train model.')
     parser.add_argument('--learning_rate',
                         type=float,
-                        default=0.001,
+                        default=0.0001,
                         help='Controls how much we are adjusting the weights of our network with\
                               respect to the loss gradient.')
     parser.add_argument('--weight_decay',
@@ -79,6 +79,10 @@ def get_train_args():
                         default=128,
                         help='Max sequence length for BERT tokenizing and subsequent encoding. Note: \
                               pretrained BERT can only handle up to 512 tokens per sequence at once.')
+    parser.add_argument('--patience', 
+                        type=int,
+                        default=5,
+                        help='Max patience for whether or not to continue training process.')
     parser.add_argument('--use_logging',
                         type=lambda s: s.lower().startswith('t'),
                         default=False,
@@ -96,10 +100,10 @@ def get_chat_args():
                         type=lambda s: s.lower().startswith('t'),
                         default=False,
                         help='Use CUDA when available.')
-    parser.add_argument('--use_BERT',
-                        type=lambda s: s.lower().startswith('t'),
-                        default=False,
-                        help='Use pretrained BERT2BERT model for chatbot')
+    parser.add_argument('--pretrained_model',
+                        type=str,
+                        default=None,
+                        help='Load pretrained model architecture for chatbot. Currently \'BERT\' and \'GPT2\' are supported')
     parser.add_argument('--repetition_penalty',
                         type=float,
                         default=1.0,
