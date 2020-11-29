@@ -46,8 +46,7 @@ def train():
         train_dataset = model.tokenize_data('./train_lyrics.jsonl', args.max_sentence_length)
         valid_dataset = model.tokenize_data('./valid_lyrics.jsonl', 'valid', args.max_sentence_length)
         optimizer = AdamW(model.model.parameters(), lr=args.learning_rate, eps=args.eps)
-        model.train(train_dataset, valid_dataset, optimizer)
-        
+        model.train(train_dataset, valid_dataset, optimizer, args.step_size, args.gamma)     
 
 if __name__ == "__main__":
     train()
