@@ -10,6 +10,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader, TensorDataset, RandomSampler
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from torch.optim.lr_scheduler import StepLR
 from transformers import BertTokenizer, BertGenerationEncoder, BertGenerationDecoder, EncoderDecoderModel, AdamW
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 
@@ -441,138 +442,6 @@ class seq2seqTrainer:
                 save_path = self.models_dir +'seq2seq_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
                 torch.save(self.model.state_dict(), save_path)
 
-# BERT WIP
-##### BERT MODEL(S) #####
-# def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128):
-#     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-#     json_text = open(dataset_file_path, 'r').readlines()
-
-#     input_ids_encode = []
-#     attention_masks_encode = []
-#     input_ids_decode = []
-#     attention_masks_decode = []
-#     lm_labels = []
-
-#     for sample in tqdm(json_text):
-#         sample = json.loads(sample)
-#         text_tokenized = tokenizer.tokenize(sample['text'])
-#         text_tokenized_length = len(text_tokenized) + 2
-#         if stage == 'valid':
-#             labels_tokenized = tokenizer.tokenize(sample['eval_labels'])
-#         else:
-#             labels_tokenized = tokenizer.tokenize(sample['labels'])
-
-#         labels_tokenized_length = len(labels_tokenized) + 2
-
-#         # truncate any sentences longer than the max length 
-#         # rather than skipping over them.
-#         # BERT can only handle up to 512 tokens at once on pretrained.
-#         # choice of 128 was mostly for hardware limitations, i.e. a single GPU :(
-#         if text_tokenized_length > max_sentence_length:
-#             text_tokenized = text_tokenized[:max_sentence_length-4]
-#             text_tokenized_length = max_sentence_length - 2
-
-#         if labels_tokenized_length > max_sentence_length:
-#             labels_tokenized = labels_tokenized[:max_sentence_length-4]
-#             labels_tokenized_length = max_sentence_length -2
-            
-#         input_id_enc = tokenizer.encode(text_tokenized)
-#         input_id_enc += [0,] * (max_sentence_length - text_tokenized_length)
-#         input_id_dec = tokenizer.encode(labels_tokenized)
-#         input_id_dec += [0,] * (max_sentence_length - labels_tokenized_length)
-
-#         lm_label = copy.deepcopy(input_id_dec)
-#         # lm_label = lm_label[:-1]
-#         # lm_label.insert(0, 0)
-#         attn_mask_enc = [float(i>0) for i in input_id_enc]
-#         attn_mask_dec = [float(i>0) for i in input_id_dec]
-
-#         input_ids_encode.append(input_id_enc)
-#         input_ids_decode.append(input_id_dec)
-#         attention_masks_encode.append(attn_mask_enc)
-#         attention_masks_decode.append(attn_mask_dec)
-#         lm_labels.append(lm_label)
-
-#     input_ids_encode = torch.tensor(input_ids_encode, dtype=torch.long)
-#     attention_masks_encode = torch.tensor(attention_masks_encode, dtype=torch.long)
-#     input_ids_decode = torch.tensor(input_ids_decode, dtype=torch.long)
-#     attention_masks_decode = torch.tensor(attention_masks_decode, dtype=torch.long)
-#     lm_labels = torch.tensor(lm_labels, dtype=torch.long)
-
-#     return TensorDataset(input_ids_encode, attention_masks_encode, input_ids_decode, attention_masks_decode, lm_labels)
-
-# class BERT2BERT(object):
-#     def __init__(self, num_epochs, batch_size, device, models_dir):
-#         self.encoder = BertGenerationEncoder.from_pretrained('bert-base-uncased', bos_token_id=101, eos_token_id=102) 
-#         self.decoder = BertGenerationDecoder.from_pretrained('bert-base-uncased', add_cross_attention=True,
-#                                                              is_decoder=True, bos_token_id=101, eos_token_id=102)
-#         self.model = EncoderDecoderModel(encoder=self.encoder, decoder=self.decoder)
-#         self.device = device
-#         self.num_epochs = num_epochs
-#         self.batch_size = batch_size
-#         self.models_dir = models_dir
-
-#     def train_bert(self, train_dataset, valid_dataset, criterion, optimizer):
-#         self.model.to(self.device)
-#         train_sampler = RandomSampler(train_dataset)
-#         valid_sampler = RandomSampler(valid_dataset)
-
-#         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=self.batch_size)
-#         valid_dataloader = DataLoader(valid_dataset, sampler=valid_sampler, batch_size=self.batch_size)
-
-#         best_val_loss = np.inf
-#         loss_set = []
-#         for epoch in range(self.num_epochs):
-#             print(EPOCH_LOG.format(dt.datetime.now(), (epoch + 1), self.num_epochs))
-#             self.model.train()
-
-#             for step, batch in enumerate(train_dataloader):
-#                 optimizer.zero_grad()
-#                 self.model.zero_grad()
-#                 batch = tuple(t.to(self.device) for t in batch)
-#                 # FIX-- MISMATCH BETWEEN ORDER OF BATCH TUPLE, 
-#                 # it's supposed to be (input_ids,  attn_mask_enc, innput_ids_dec, attn_mask_dec)
-#                 # below you see it's WRONG.
-#                 input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
-#                 loss = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
-#                                   attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
-#                                   labels=lm_labels)[0]
-#                 # will need to research this some more:
-#                 # loss output by EncoderDecoderModel is "language model loss", which
-#                 # I interpret as loss for masked token but not 100% sure yet. if it is this loss
-#                 # it may not be the best approach to adjust gradients based on this loss.
-#                 # it is possible to use cross-entropy loss with the logits that are output from this 
-#                 # model as well. originally had used CE loss but when my BERT2BERT model
-#                 # was generating repeated tokens for every input, I suspected it was training incorrectly.
-#                 # this approach more or less corrects that. however, either way there is a repetition_penalty
-#                 # argument for model.generate() that accounts for this. 
-#                 loss_set.append(loss.item())
-#                 loss.backward()
-#                 optimizer.step()
-
-#                 avg_train_loss = np.mean(loss_set)
-#                 if step % 100 == 0:
-#                     print(STEP_LOG.format(dt.datetime.now(tz=TIMEZONE), calculate_perplexity(avg_train_loss), step, len(train_dataloader)))
-
-#             val_loss_set = []
-#             for step, batch in enumerate(valid_dataloader):
-#                 self.model.eval()
-#                 batch = tuple(t.to(self.device) for t in batch)
-#                 input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
-#                 loss = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
-#                                   attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
-#                                   labels=lm_labels)[0]
-
-#                 val_loss_set.append(loss.item())
-#             avg_val_loss = np.mean(val_loss_set)
-#             val_ppl = calculate_perplexity(avg_val_loss)
-#             print('{} | Validation perplexity achieved: {}'.format(dt.datetime.now(), val_ppl))
-#             if avg_val_loss < best_val_loss:
-#                 best_val_loss = avg_val_loss
-#                 formatted_ppl = format_perplexity(val_ppl)
-#                 save_path = self.models_dir +'bert2bert_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
-#                 self.model.save_pretrained(save_path)
-
 
 #### GPT2  ####
 def add_special_tokens(model, tokenizer):
@@ -788,7 +657,7 @@ class pretrained_model(object):
                 print(STEP_LOG.format(dt.datetime.now(tz=TIMEZONE), calculate_perplexity(avg_train_loss),
                                       step, len(train_loader)))
 
-    def validation_step(self, model, val_loader, best_val_loss):
+    def validation_step(self, model, val_loader, best_val_loss, epoch):
         model.eval()
         val_loss_set = []
         for step, batch in enumerate(val_loader):
@@ -812,7 +681,7 @@ class pretrained_model(object):
             self.model.save_pretrained(save_path)
         return best_val_loss
 
-    def train(self, train_dataset, valid_dataset, optimizer):
+    def train(self, train_dataset, valid_dataset, optimizer, step_size, gamma):
         self.model.to(self.device)
         train_sampler = RandomSampler(train_dataset)
         valid_sampler = RandomSampler(valid_dataset)
@@ -823,12 +692,13 @@ class pretrained_model(object):
         best_val_loss = np.inf
         loss_set = []
         patience_counter = 0
+        scheduler = StepLR(optimizer, step_size=step_size, gamma=gamma)
         for epoch in range(self.num_epochs):
             print(EPOCH_LOG.format(dt.datetime.now(), (epoch + 1), self.num_epochs))
             self.model.train()
             self.train_step(self.model, train_dataloader, optimizer)
             previous_val_loss = best_val_loss
-            best_val_loss = self.validation_step(self.model, valid_dataloader, best_val_loss)
+            best_val_loss = self.validation_step(self.model, valid_dataloader, best_val_loss, epoch)
             if patience_counter > self.patience:
                 print('Best val loss: {:.4}'.format(best_val_loss))
                 break
