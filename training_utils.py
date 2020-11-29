@@ -790,7 +790,7 @@ class pretrained_model(object):
 
     def validation_step(self, model, val_loader, best_val_loss):
         model.eval()
-        valid_loss_set = []
+        val_loss_set = []
         for step, batch in enumerate(val_loader):
             batch = tuple(t.to(self.device) for t in batch)
             if self.model_name == 'BERT':
