@@ -7,12 +7,10 @@ from args import get_chat_args
 # args should specify which approach used to generate responses
 # i.e. beam search or nucleus sampling
 
-
-
 if __name__ == '__main__':
     chatbot_args = get_chat_args()
     current_device = torch.device("cuda" if chatbot_args.with_cuda else "cpu")
-    if not chatbot_args.use_BERT:
+    if not chatbot_args.pretrained_model:
         chat_dict = ChatDictionary(chatbot_args.vocab_path)
         opts = set_model_config(chat_dict)
         model_checkpoint = torch.load(chatbot_args.model_path, map_location = current_device)
@@ -22,7 +20,8 @@ if __name__ == '__main__':
         chatbot.eval()
         start_rapbot(chatbot, chat_dict, chatbot_args.top_p, current_device, transformer = False)
     else:
-        chatbot = EncoderDecoderModel.from_pretrained(chatbot_args.model_path)
-        bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        bert_bot(chatbot, bert_tokenizer, chatbot_args.top_k, chatbot_args.top_p,
-                 chatbot_args.temperature, chatbot_args.repetition_penalty)
+        if chatbot_args.pretrained_model == 'BERT':
+            chatbot = EncoderDecoderModel.from_pretrained(chatbot_args.model_path)
+            bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+            bert_bot(chatbot, bert_tokenizer, chatbot_args.top_k, chatbot_args.top_p,
+                     chatbot_args.temperature, chatbot_args.repetition_penalty)
