@@ -11,6 +11,7 @@ from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader, TensorDataset, RandomSampler
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from transformers import BertTokenizer, BertGenerationEncoder, BertGenerationDecoder, EncoderDecoderModel, AdamW
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
 
 # from processing_utils import RETOK
 # commented above, added below to run on GCP without needing to import
@@ -19,7 +20,10 @@ RETOK = re.compile(r'\w+|[^\w\s\[\]]|\n', re.UNICODE)
 EPOCH_LOG = '{} | Epoch {} / {}'
 STEP_LOG = '{} | Perplexity achieved: {} | Step {} / {}'
 TIMEZONE = pytz.timezone('America/New_York')
-
+SPECIAL_TOKENS = ["<bos>", "<eos>", "<speaker1>", "<speaker2>", "<pad>"]
+ATTR_TO_SPECIAL_TOKEN = {'bos_token': '<bos>', 'eos_token': '<eos>', 
+                         'pad_token': '<pad>', 'additional_special_tokens': ['<speaker1>', '<speaker2>']}
+                         
 class ChatDictionary(object):
     """
     Simple dict loader
@@ -172,8 +176,8 @@ REMEMBER: REACH OUT TO PROF. CHO OR TAs TO CONSULT ON BEST WAY TO CITE THEIR WOR
 ***
 '''
 
-# encoder, decoder, and attention layer were implemented by DS-GA1011 
-# instructors used here
+# encoder, decoder, and attention layer used here 
+# were implemented by DS-GA1011 instructors 
 
 class EncoderRNN(nn.Module):
     """Encodes the input context."""
@@ -237,7 +241,7 @@ class DecoderRNN(nn.Module):
         seqlen = text_vec.size(1)
         encoder_output, encoder_hidden, attention_mask = encoder_states
         
-        decoder_hidden = decoder_hidden
+        # decoder_hidden = decoder_hidden
         output = []
         attn_w_log = []
 
@@ -306,8 +310,8 @@ class AttentionLayer(nn.Module):
         return output, attention_weights
 
 
-def set_model_config(chat_dictionary, hidden_size=512, embedding_size=256, 
-                     num_layers_enc=2, num_layers_dec=2, dropout=0.3, 
+def set_model_config(chat_dictionary, hidden_size=512, embedding_size=256,
+                     num_layers_enc=2, num_layers_dec=2, dropout=0.3,
                      encoder_shared_lt=True):
     opts = {}
     opts['vocab_size'] = len(chat_dictionary)
@@ -439,76 +443,203 @@ class seq2seqTrainer:
 
 # BERT WIP
 ##### BERT MODEL(S) #####
-def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128):
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    json_text = open(dataset_file_path, 'r').readlines()
+# def tokenize_for_BERT(dataset_file_path, stage='train', max_sentence_length=128):
+#     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+#     json_text = open(dataset_file_path, 'r').readlines()
 
-    input_ids_encode = []
-    attention_masks_encode = []
-    input_ids_decode = []
-    attention_masks_decode = []
-    lm_labels = []
+#     input_ids_encode = []
+#     attention_masks_encode = []
+#     input_ids_decode = []
+#     attention_masks_decode = []
+#     lm_labels = []
+
+#     for sample in tqdm(json_text):
+#         sample = json.loads(sample)
+#         text_tokenized = tokenizer.tokenize(sample['text'])
+#         text_tokenized_length = len(text_tokenized) + 2
+#         if stage == 'valid':
+#             labels_tokenized = tokenizer.tokenize(sample['eval_labels'])
+#         else:
+#             labels_tokenized = tokenizer.tokenize(sample['labels'])
+
+#         labels_tokenized_length = len(labels_tokenized) + 2
+
+#         # truncate any sentences longer than the max length 
+#         # rather than skipping over them.
+#         # BERT can only handle up to 512 tokens at once on pretrained.
+#         # choice of 128 was mostly for hardware limitations, i.e. a single GPU :(
+#         if text_tokenized_length > max_sentence_length:
+#             text_tokenized = text_tokenized[:max_sentence_length-4]
+#             text_tokenized_length = max_sentence_length - 2
+
+#         if labels_tokenized_length > max_sentence_length:
+#             labels_tokenized = labels_tokenized[:max_sentence_length-4]
+#             labels_tokenized_length = max_sentence_length -2
+            
+#         input_id_enc = tokenizer.encode(text_tokenized)
+#         input_id_enc += [0,] * (max_sentence_length - text_tokenized_length)
+#         input_id_dec = tokenizer.encode(labels_tokenized)
+#         input_id_dec += [0,] * (max_sentence_length - labels_tokenized_length)
+
+#         lm_label = copy.deepcopy(input_id_dec)
+#         # lm_label = lm_label[:-1]
+#         # lm_label.insert(0, 0)
+#         attn_mask_enc = [float(i>0) for i in input_id_enc]
+#         attn_mask_dec = [float(i>0) for i in input_id_dec]
+
+#         input_ids_encode.append(input_id_enc)
+#         input_ids_decode.append(input_id_dec)
+#         attention_masks_encode.append(attn_mask_enc)
+#         attention_masks_decode.append(attn_mask_dec)
+#         lm_labels.append(lm_label)
+
+#     input_ids_encode = torch.tensor(input_ids_encode, dtype=torch.long)
+#     attention_masks_encode = torch.tensor(attention_masks_encode, dtype=torch.long)
+#     input_ids_decode = torch.tensor(input_ids_decode, dtype=torch.long)
+#     attention_masks_decode = torch.tensor(attention_masks_decode, dtype=torch.long)
+#     lm_labels = torch.tensor(lm_labels, dtype=torch.long)
+
+#     return TensorDataset(input_ids_encode, attention_masks_encode, input_ids_decode, attention_masks_decode, lm_labels)
+
+# class BERT2BERT(object):
+#     def __init__(self, num_epochs, batch_size, device, models_dir):
+#         self.encoder = BertGenerationEncoder.from_pretrained('bert-base-uncased', bos_token_id=101, eos_token_id=102) 
+#         self.decoder = BertGenerationDecoder.from_pretrained('bert-base-uncased', add_cross_attention=True,
+#                                                              is_decoder=True, bos_token_id=101, eos_token_id=102)
+#         self.model = EncoderDecoderModel(encoder=self.encoder, decoder=self.decoder)
+#         self.device = device
+#         self.num_epochs = num_epochs
+#         self.batch_size = batch_size
+#         self.models_dir = models_dir
+
+#     def train_bert(self, train_dataset, valid_dataset, criterion, optimizer):
+#         self.model.to(self.device)
+#         train_sampler = RandomSampler(train_dataset)
+#         valid_sampler = RandomSampler(valid_dataset)
+
+#         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=self.batch_size)
+#         valid_dataloader = DataLoader(valid_dataset, sampler=valid_sampler, batch_size=self.batch_size)
+
+#         best_val_loss = np.inf
+#         loss_set = []
+#         for epoch in range(self.num_epochs):
+#             print(EPOCH_LOG.format(dt.datetime.now(), (epoch + 1), self.num_epochs))
+#             self.model.train()
+
+#             for step, batch in enumerate(train_dataloader):
+#                 optimizer.zero_grad()
+#                 self.model.zero_grad()
+#                 batch = tuple(t.to(self.device) for t in batch)
+#                 # FIX-- MISMATCH BETWEEN ORDER OF BATCH TUPLE, 
+#                 # it's supposed to be (input_ids,  attn_mask_enc, innput_ids_dec, attn_mask_dec)
+#                 # below you see it's WRONG.
+#                 input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
+#                 loss = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
+#                                   attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
+#                                   labels=lm_labels)[0]
+#                 # will need to research this some more:
+#                 # loss output by EncoderDecoderModel is "language model loss", which
+#                 # I interpret as loss for masked token but not 100% sure yet. if it is this loss
+#                 # it may not be the best approach to adjust gradients based on this loss.
+#                 # it is possible to use cross-entropy loss with the logits that are output from this 
+#                 # model as well. originally had used CE loss but when my BERT2BERT model
+#                 # was generating repeated tokens for every input, I suspected it was training incorrectly.
+#                 # this approach more or less corrects that. however, either way there is a repetition_penalty
+#                 # argument for model.generate() that accounts for this. 
+#                 loss_set.append(loss.item())
+#                 loss.backward()
+#                 optimizer.step()
+
+#                 avg_train_loss = np.mean(loss_set)
+#                 if step % 100 == 0:
+#                     print(STEP_LOG.format(dt.datetime.now(tz=TIMEZONE), calculate_perplexity(avg_train_loss), step, len(train_dataloader)))
+
+#             val_loss_set = []
+#             for step, batch in enumerate(valid_dataloader):
+#                 self.model.eval()
+#                 batch = tuple(t.to(self.device) for t in batch)
+#                 input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
+#                 loss = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
+#                                   attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
+#                                   labels=lm_labels)[0]
+
+#                 val_loss_set.append(loss.item())
+#             avg_val_loss = np.mean(val_loss_set)
+#             val_ppl = calculate_perplexity(avg_val_loss)
+#             print('{} | Validation perplexity achieved: {}'.format(dt.datetime.now(), val_ppl))
+#             if avg_val_loss < best_val_loss:
+#                 best_val_loss = avg_val_loss
+#                 formatted_ppl = format_perplexity(val_ppl)
+#                 save_path = self.models_dir +'bert2bert_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
+#                 self.model.save_pretrained(save_path)
+
+
+#### GPT2  ####
+def add_special_tokens(model, tokenizer):
+    original_num_tokens = len(tokenizer.encoder)
+    tokens_to_add = tokenizer.add_special_tokens(ATTR_TO_SPECIAL_TOKEN)
+    model.resize_token_embeddings(new_num_tokens=tokens_to_add + original_num_tokens)
+
+def tokenize_for_GPT2(dataset_file_path, tokenizer, stage='train', max_sentence_length=128):
+    json_text = open(dataset_file_path, 'r').readlines()
+    bos, eos, speaker1, speaker2, pad = tokenizer.convert_tokens_to_ids(SPECIAL_TOKENS)
+    inputs = []
+    attn_mask = []
+    label_ids =[]
 
     for sample in tqdm(json_text):
         sample = json.loads(sample)
         text_tokenized = tokenizer.tokenize(sample['text'])
-        text_tokenized_length = len(text_tokenized) + 2
         if stage == 'valid':
-            labels_tokenized = tokenizer.tokenize(sample['eval_labels'])
+            label_tokenized = tokenizer.tokenize(sample['eval_labels'])
         else:
-            labels_tokenized = tokenizer.tokenize(sample['labels'])
+            label_tokenized = tokenizer.tokenize(sample['labels'])
 
-        labels_tokenized_length = len(labels_tokenized) + 2
+        if not len(text_tokenized) or not len(label_tokenized):
+            continue
+        else:
+            if len(text_tokenized) > max_sentence_length:
+                text_tokenized = text_tokenized[:max_sentence_length-5]
+            if len(label_tokenized) > max_sentence_length:
+                label_tokenized = label_tokenized[:max_sentence_length-5]
 
-        # truncate any sentences longer than the max length 
-        # rather than skipping over them.
-        # BERT can only handle up to 512 tokens at once on pretrained.
-        # choice of 128 was mostly for hardware limitations, i.e. a single GPU :(
-        if text_tokenized_length > max_sentence_length:
-            text_tokenized = text_tokenized[:max_sentence_length-4]
-            text_tokenized_length = max_sentence_length - 2
+            encoded_text = tokenizer.encode(text_tokenized)
+            encoded_text = [tokenizer.bos_token_id,]  + encoded_text + [tokenizer.eos_token_id,]
+            encoded_label = tokenizer.encode(label_tokenized)
+            encoded_label = [tokenizer.bos_token_id,] + encoded_label + [tokenizer.eos_token_id,]
+            text_encoded_length = len(encoded_text)
+            label_encoded_length = len(encoded_label)
+            encoded_text += [pad_token_id,] * (max_sentence_length - text_encoded_length)
+            encoded_label += [pad_token_id,] * (max_sentence_length - label_encoded_length)
+            if pad_token_id in encoded_text:
+                attn =  [1,] * (encoded_text.index(pad_token_id) + 1)
+                attn += [0,] * (max_sentence_length - text_encoded_length - 1)
+            else:
+                attn = [1,] * max_sentence_length
+            encoded_text = encoded_text[:max_sentence_length]
+            encoded_label = encoded_text[:max_sentence_length]
+            attn = attn[:max_sentence_length]
 
-        if labels_tokenized_length > max_sentence_length:
-            labels_tokenized = labels_tokenized[:max_sentence_length-4]
-            labels_tokenized_length = max_sentence_length -2
-            
-        input_id_enc = tokenizer.encode(text_tokenized)
-        input_id_enc += [0,] * (max_sentence_length - text_tokenized_length)
-        input_id_dec = tokenizer.encode(labels_tokenized)
-        input_id_dec += [0,] * (max_sentence_length - labels_tokenized_length)
+            inputs.append(encoded_text)
+            attn_mask.append(attn)
+            label_ids.append(encoded_label)
 
-        lm_label = copy.deepcopy(input_id_dec)
-        # lm_label = lm_label[:-1]
-        # lm_label.insert(0, 0)
-        attn_mask_enc = [float(i>0) for i in input_id_enc]
-        attn_mask_dec = [float(i>0) for i in input_id_dec]
 
-        input_ids_encode.append(input_id_enc)
-        input_ids_decode.append(input_id_dec)
-        attention_masks_encode.append(attn_mask_enc)
-        attention_masks_decode.append(attn_mask_dec)
-        lm_labels.append(lm_label)
+    inputs = torch.tensor(inputs, dtype=torch.long)
+    attn_mask = torch.tensor(attn_mask, dtype=torch.long)
+    label_ids = torch.tensor(label_ids, dtype=torch.long)
 
-    input_ids_encode = torch.tensor(input_ids_encode, dtype=torch.long)
-    attention_masks_encode = torch.tensor(attention_masks_encode, dtype=torch.long)
-    input_ids_decode = torch.tensor(input_ids_decode, dtype=torch.long)
-    attention_masks_decode = torch.tensor(attention_masks_decode, dtype=torch.long)
-    lm_labels = torch.tensor(lm_labels, dtype=torch.long)
+    return TensorDataset(inputs, attn_mask, label_ids)
 
-    return TensorDataset(input_ids_encode, attention_masks_encode, input_ids_decode, attention_masks_decode, lm_labels)
-
-class BERT2BERT(object):
+class GPT2model(object):
     def __init__(self, num_epochs, batch_size, device, models_dir):
-        self.encoder = BertGenerationEncoder.from_pretrained('bert-base-uncased', bos_token_id=101, eos_token_id=102) 
-        self.decoder = BertGenerationDecoder.from_pretrained('bert-base-uncased', add_cross_attention=True,
-                                                             is_decoder=True, bos_token_id=101, eos_token_id=102)
-        self.model = EncoderDecoderModel(encoder=self.encoder, decoder=self.decoder)
-        self.device = device
+        self.model = GPT2LMHeadModel.from_pretrained('gpt2-medium')
         self.num_epochs = num_epochs
         self.batch_size = batch_size
+        self.device = device
         self.models_dir = models_dir
 
-    def train_bert(self, train_dataset, valid_dataset, criterion, optimizer):
+    def train(self, train_dataset, valid_dataset, optimizer):
         self.model.to(self.device)
         train_sampler = RandomSampler(train_dataset)
         valid_sampler = RandomSampler(valid_dataset)
@@ -524,21 +655,10 @@ class BERT2BERT(object):
 
             for step, batch in enumerate(train_dataloader):
                 optimizer.zero_grad()
-                self.model.zero_grad()
                 batch = tuple(t.to(self.device) for t in batch)
-                input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
-                loss = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
-                                           attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
-                                           labels=lm_labels)[0]
-                # will need to research this some more:
-                # loss output by EncoderDecoderModel is "language model loss", which
-                # I interpret as loss for masked token but not 100% sure yet. if it is this loss
-                # it may not be the best approach to adjust gradients based on this loss.
-                # it is possible to use cross-entropy loss with the logits that are output from this 
-                # model as well. originally had used CE loss but when my BERT2BERT model
-                # was generating repeated tokens for every input, I suspected it was training incorrectly.
-                # this approach more or less corrects that. however, either way there is a repetition_penalty
-                # argument for model.generate() that accounts for this. 
+                input_ids, attention_masks, label_ids = batch
+                loss = self.model(input_ids=input_ids, attention_mask=attention_masks, labels=label_ids)[0]
+
                 loss_set.append(loss.item())
                 loss.backward()
                 optimizer.step()
@@ -551,17 +671,169 @@ class BERT2BERT(object):
             for step, batch in enumerate(valid_dataloader):
                 self.model.eval()
                 batch = tuple(t.to(self.device) for t in batch)
-                input_ids_encode, input_ids_decode, attention_masks_encode, attention_masks_decode, lm_labels = batch
-                loss = self.model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode, 
-                                           attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
-                                           labels=lm_labels)[0]
-
+                input_ids, attention_masks, label_ids = batch
+                loss = self.model(input_ids=input_ids, attention_mask=attention_masks, labels=label_ids)[0]
                 val_loss_set.append(loss.item())
+
             avg_val_loss = np.mean(val_loss_set)
             val_ppl = calculate_perplexity(avg_val_loss)
             print('{} | Validation perplexity achieved: {}'.format(dt.datetime.now(), val_ppl))
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 formatted_ppl = format_perplexity(val_ppl)
-                save_path = self.models_dir +'bert2bert_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
+                save_path = self.models_dir +'GPT2_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
                 self.model.save_pretrained(save_path)
+
+
+class pretrained_model(object):
+    def __init__(self, model_name, num_epochs, batch_size, device, models_dir, patience=5):
+        self.model_name = model_name
+        if self.model_name == 'BERT':
+            self.encoder = BertGenerationEncoder.from_pretrained('bert-base-uncased', bos_token_id=101, eos_token_id=102) 
+            self.decoder = BertGenerationDecoder.from_pretrained('bert-base-uncased', add_cross_attention=True,
+                                                                 is_decoder=True, bos_token_id=101, eos_token_id=102)
+            self.model = EncoderDecoderModel(encoder=self.encoder, decoder=self.decoder)
+        elif self.model_name == 'GPT2':
+            self.model = GPT2LMHeadModel.from_pretrained('gpt2-medium')
+        else:
+            raise ValueError('Invalid model seleciton.')
+        self.num_epochs = num_epochs
+        self.batch_size = batch_size
+        self.device = device
+        self.models_dir = models_dir
+        self.patience = patience
+
+    def tokenize_data(self, dataset_file_path, stage='train', max_sentence_length=128):
+        max_sentence_length = max_sentence_length - 2
+        json_text = open(dataset_file_path, 'r').readlines()
+        if self.model_name == 'BERT':
+            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+            input_ids_encode = []
+            attention_masks_encode = []
+            input_ids_decode = []
+            attention_masks_decode = []
+            lm_labels = []
+
+            for sample in tqdm(json_text):
+                sample = json.loads(sample)
+                text_tokenized = tokenizer.tokenize(sample['text'])
+                if stage == 'valid':
+                    labels_tokenized = tokenizer.tokenize(sample['eval_labels'])
+                else:
+                    labels_tokenized = tokenizer.tokenize(sample['labels'])
+
+                text_tokenized_length = len(text_tokenized)
+                labels_tokenized_length = len(labels_tokenized)
+
+                if text_tokenized_length > max_sentence_length:
+                    text_tokenized = text_tokenized[:max_sentence_length]
+                    text_tokenized_length = max_sentence_length
+
+                if labels_tokenized_length > max_sentence_length:
+                    labels_tokenized = labels_tokenized[:max_sentence_length]
+                    labels_tokenized_length = max_sentence_length
+                try:
+                    input_id_enc = tokenizer.encode(text_tokenized)
+                    input_id_enc += [0,] * (max_sentence_length - text_tokenized_length)
+                    input_id_dec = tokenizer.encode(labels_tokenized)
+                    input_id_dec += [0,] * (max_sentence_length - labels_tokenized_length)
+                except:
+                    print(text_tokenized)
+                    print(labels_tokenized)
+
+                assert len(input_id_enc)==(max_sentence_length + 2)
+                assert len(input_id_dec)==(max_sentence_length + 2)
+                lm_label = [-100 if token==0 else token for token in input_id_dec]
+
+                attn_mask_enc = [float(i>0) for i in input_id_enc]
+                attn_mask_dec = [float(i>0) for i in input_id_dec]
+
+                input_ids_encode.append(input_id_enc)
+                input_ids_decode.append(input_id_dec)
+                attention_masks_encode.append(attn_mask_enc)
+                attention_masks_decode.append(attn_mask_dec)
+                lm_labels.append(lm_label)
+
+            input_ids_encode = torch.tensor(input_ids_encode, dtype=torch.long)
+            attention_masks_encode = torch.tensor(attention_masks_encode, dtype=torch.long)
+            input_ids_decode = torch.tensor(input_ids_decode, dtype=torch.long)
+            attention_masks_decode = torch.tensor(attention_masks_decode, dtype=torch.long)
+            lm_labels = torch.tensor(lm_labels, dtype=torch.long)
+
+            return TensorDataset(input_ids_encode, attention_masks_encode, input_ids_decode, attention_masks_decode, lm_labels)
+
+        elif self.model_name == 'GPT2':
+            # TO-DO
+            tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
+            print('TO-DO')
+
+    def train_step(self, model, train_loader, optimizer):
+        loss_set = []
+        optimizer.zero_grad()
+        for step, batch in enumerate(train_loader):
+            batch = tuple(t.to(self.device) for t in batch)
+            if self.model_name == 'BERT':
+                input_ids_encode, attention_masks_encode, input_ids_decode, attention_masks_decode, lm_labels = batch
+                loss = model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode,
+                             attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
+                             labels=lm_labels)[0]
+            elif self.model_name == 'GPT2':
+                print('TO-DO :)')
+
+            loss_set.append(loss.item())
+            loss.backward()
+            optimizer.step()
+            avg_train_loss = np.mean(loss_set)
+            if step % 100 == 0:
+                print(STEP_LOG.format(dt.datetime.now(tz=TIMEZONE), calculate_perplexity(avg_train_loss),
+                                      step, len(train_loader)))
+
+    def validation_step(self, model, val_loader, best_val_loss):
+        model.eval()
+        valid_loss_set = []
+        for step, batch in enumerate(val_loader):
+            batch = tuple(t.to(self.device) for t in batch)
+            if self.model_name == 'BERT':
+                input_ids_encode, attention_masks_encode, input_ids_decode, attention_masks_decode, lm_labels = batch
+                loss = model(input_ids=input_ids_encode, decoder_input_ids=input_ids_decode,
+                             attention_mask=attention_masks_encode, decoder_attention_mask=attention_masks_decode,
+                             labels=lm_labels)[0]
+            elif self.model_name == 'GPT2':
+                print('TO-DO')
+
+            val_loss_set.append(loss.item())
+        avg_val_loss = np.mean(val_loss_set)
+        val_ppl = calculate_perplexity(avg_val_loss)
+        print('{} | Validation perplexity achieved: {:.4}'.format(dt.datetime.now(), val_ppl))
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            formatted_ppl = format_perplexity(val_ppl)
+            save_path = self.models_dir +'bert2bert_chatbot_epoch-'+str(epoch+1)+formatted_ppl+'.pt'
+            self.model.save_pretrained(save_path)
+        return best_val_loss
+
+    def train(self, train_dataset, valid_dataset, optimizer):
+        self.model.to(self.device)
+        train_sampler = RandomSampler(train_dataset)
+        valid_sampler = RandomSampler(valid_dataset)
+
+        train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=self.batch_size)
+        valid_dataloader = DataLoader(valid_dataset, sampler=valid_sampler, batch_size=self.batch_size)
+
+        best_val_loss = np.inf
+        loss_set = []
+        patience_counter = 0
+        for epoch in range(self.num_epochs):
+            print(EPOCH_LOG.format(dt.datetime.now(), (epoch + 1), self.num_epochs))
+            self.model.train()
+            self.train_step(self.model, train_dataloader, optimizer)
+            previous_val_loss = best_val_loss
+            best_val_loss = self.validation_step(self.model, valid_dataloader, best_val_loss)
+            if patience_counter > self.patience:
+                print('Best val loss: {:.4}'.format(best_val_loss))
+                break
+            if best_val_loss < previous_val_loss:
+                patience_counter = 0 
+            else:
+                patience_counter += 1
+
