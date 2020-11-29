@@ -83,6 +83,15 @@ def get_train_args():
                         type=int,
                         default=5,
                         help='Max patience for whether or not to continue training process.')
+    parser.add_argument('--step_size',
+                        type=int,
+                        default=2,
+                        help='Period of learning rate decay, i.e. decay the learning rate of each\
+                              parameter group by gamma every step_size epochs')
+    parser.add_argument('--gamma',
+                        type=float,
+                        default=0.1,
+                        help='Multiplicative factor for learning rate decay.')
     parser.add_argument('--use_logging',
                         type=lambda s: s.lower().startswith('t'),
                         default=False,

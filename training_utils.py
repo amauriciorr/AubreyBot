@@ -682,6 +682,7 @@ class pretrained_model(object):
         return best_val_loss
 
     def train(self, train_dataset, valid_dataset, optimizer, step_size, gamma):
+        scheduler = StepLR(optimizer, step_size=step_size, gamma=gamma)
         self.model.to(self.device)
         train_sampler = RandomSampler(train_dataset)
         valid_sampler = RandomSampler(valid_dataset)
@@ -692,7 +693,7 @@ class pretrained_model(object):
         best_val_loss = np.inf
         loss_set = []
         patience_counter = 0
-        scheduler = StepLR(optimizer, step_size=step_size, gamma=gamma)
+
         for epoch in range(self.num_epochs):
             print(EPOCH_LOG.format(dt.datetime.now(), (epoch + 1), self.num_epochs))
             self.model.train()
@@ -706,4 +707,5 @@ class pretrained_model(object):
                 patience_counter = 0 
             else:
                 patience_counter += 1
+        scheduler.step()
 
