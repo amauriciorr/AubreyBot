@@ -37,8 +37,10 @@ def create_counts_dict(json_file, regex):
 	return word_count_dict
 
 def to_exclude(word):
-	blacklisted = [' ', '', '\'', '\"', '\xa0']
-	if word not in blacklisted:
+	blacklisted = [' ', '', '\'', '\"', '\xa0', '\n', '\t']
+	blacklisted += ['.', ]
+	whitespace = re.compile(r'^\s{2,}')
+	if word not in blacklisted and not whitespace.search(word):
 		return True
 	else:
 		return False
@@ -68,15 +70,17 @@ def create_text_and_target(lyrics, split=0.8):
 
 	for i in range(len(train_lyrics) - 1):
 		text_and_target = {}
-		text_and_target['text'] = train_lyrics[i]
-		text_and_target['labels'] = train_lyrics[i + 1]
-		train_text_and_targets.append(text_and_target)
+		if not train_lyrics[i].isspace() and not train_lyrics[i + 1].isspace():
+			text_and_target['text'] = train_lyrics[i]
+			text_and_target['labels'] = train_lyrics[i + 1]
+			train_text_and_targets.append(text_and_target)
 
 	for i in range(len(valid_lyrics) - 1):
 		text_and_target = {}
-		text_and_target['text'] = valid_lyrics[i]
-		text_and_target['eval_labels'] = valid_lyrics[i + 1]
-		valid_text_and_targets.append(text_and_target)
+		if not valid_lyrics[i].isspace() and not valid_lyrics[i + 1].isspace():
+			text_and_target['text'] = valid_lyrics[i]
+			text_and_target['eval_labels'] = valid_lyrics[i + 1]
+			valid_text_and_targets.append(text_and_target)
 
 	write_jsonl('./train_lyrics.jsonl', train_text_and_targets)
 	write_jsonl('./valid_lyrics.jsonl', valid_text_and_targets)
@@ -185,7 +189,7 @@ def force_search_artist(genius_obj, artist_name, sleep_time=180, max_songs=None,
 				else:
 					continue
 		# temporarily stop API requests when encountering a timeout or when
-		# there's 
+		# there's an error
 		except (requests.exceptions.ReadTimeout, TypeError) as e:
 			print('Encountered the following error: ')
 			print(e)
