@@ -14,6 +14,10 @@ def get_setup_args():
                         type=str,
                         default=None,
                         help='Path to load artist lyrics JSON.')
+    parser.add_argument('--lookback',
+                        type=int,
+                        default=5,
+                        help='Number of lines to include as context.')
     args = parser.parse_args()
 
     return args

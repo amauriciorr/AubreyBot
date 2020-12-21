@@ -60,7 +60,7 @@ def get_lyrics_from_json(json_file, regex):
 		all_lyrics += list(filter(to_exclude, song.split('\n')))
 	return all_lyrics
 
-def create_text_and_target(lyrics, split=0.8):
+def create_text_and_target(lyrics, lookback, split=0.8):
 	split_idx = int(len(lyrics) * 0.8)
 	train_text_and_targets = []
 	valid_text_and_targets = []
@@ -68,18 +68,22 @@ def create_text_and_target(lyrics, split=0.8):
 	train_lyrics = lyrics[:split_idx]
 	valid_lyrics = lyrics[split_idx:]
 
-	for i in range(len(train_lyrics) - 1):
+	for i in range(lookback, len(train_lyrics)):
 		text_and_target = {}
-		if not train_lyrics[i].isspace() and not train_lyrics[i + 1].isspace():
-			text_and_target['text'] = train_lyrics[i]
-			text_and_target['labels'] = train_lyrics[i + 1]
+		train_text = " ".join(train_lyrics[i-lookback:i])
+		train_label = train_lyrics[i]
+		if not train_text.isspace() and not train_label.isspace():
+			text_and_target['text'] = train_text
+			text_and_target['labels'] = train_label
 			train_text_and_targets.append(text_and_target)
 
-	for i in range(len(valid_lyrics) - 1):
+	for i in range(lookback, len(valid_lyrics)):
 		text_and_target = {}
-		if not valid_lyrics[i].isspace() and not valid_lyrics[i + 1].isspace():
-			text_and_target['text'] = valid_lyrics[i]
-			text_and_target['eval_labels'] = valid_lyrics[i + 1]
+		valid_text = " ".join(valid_lyrics[i-lookback:i])
+		valid_label = valid_lyrics[i]
+		if not valid_text.isspace() and not valid_label.isspace():
+			text_and_target['text'] = valid_text
+			text_and_target['eval_labels'] = valid_label
 			valid_text_and_targets.append(text_and_target)
 
 	write_jsonl('./train_lyrics.jsonl', train_text_and_targets)

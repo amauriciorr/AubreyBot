@@ -33,7 +33,7 @@ def get_and_process_songs(args):
     word_counts = create_counts_dict(genius_file, RETOK)
     pkl.dump(word_counts, open('word_counts_dict.p', 'wb'))
     artist_lyrics = get_lyrics_from_json(genius_file, SONG_PART_REGEX)
-    create_text_and_target(artist_lyrics)
+    create_text_and_target(artist_lyrics, lookback=args.lookback)
 
 if __name__ == "__main__":
     get_and_process_songs(get_setup_args())
