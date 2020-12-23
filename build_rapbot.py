@@ -4,9 +4,6 @@ from args import get_train_args
 from training_utils import *
 import logging
 
-INIT_MODEL = '{} | Initializing model'
-TRAIN_MSG = '{} | Training model'
-
 def train():
     args = get_train_args()
     current_device = torch.device("cuda" if args.with_cuda else "cpu")
@@ -36,16 +33,20 @@ def train():
         optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, 
                                      weight_decay=args.weight_decay, amsgrad=True)
         model_trainer = seq2seqTrainer(model, train_dataloader, valid_dataloader, criterion,
-                                       optimizer, args.num_epochs, current_device, 
+                                       optimizer, args.num_epochs, args.patience, current_device, 
                                        args.save_dir)
-        model_trainer.train_model()
+        model_trainer.train()
 
     else:
-        model = pretrained_model(args.pretrained_model, args.num_epochs, args.batch_size, current_device,
-                                 args.save_dir, args.patience)
+        chat_dict = ChatDictionary('./word_counts_dict.p')
+        vocab = [chat_dict.v2t([idx]) for idx in range(chat_dict.__len__())]
+        model = pretrained_model(args.pretrained_model, len(vocab), args.max_sentence_length, 
+                                 args.num_epochs, args.batch_size, current_device, args.save_dir, 
+                                 args.patience)
         train_dataset = model.tokenize_data('./train_lyrics.jsonl', args.max_sentence_length)
-        valid_dataset = model.tokenize_data('./valid_lyrics.jsonl', 'valid', args.max_sentence_length)
-        optimizer = AdamW(model.model.parameters(), lr=args.learning_rate, eps=args.eps)
+        valid_dataset = model.tokenize_data('./valid_lyrics.jsonl', args.max_sentence_length, 'valid')
+        optimizer = AdamW(model.model.parameters(), lr=args.learning_rate, eps=args.eps,
+                          weight_decay=args.weight_decay)
         model.train(train_dataset, valid_dataset, optimizer, args.step_size, args.gamma)     
 
 if __name__ == "__main__":
