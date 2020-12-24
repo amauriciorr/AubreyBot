@@ -1,7 +1,8 @@
 import re
+import textwrap
+from copy import copy
 import torch.nn.functional as F
 from training_utils import *
-
 
 # T0-D0
 # add beam search class?
@@ -130,7 +131,7 @@ def format_BERT_ouput(reply):
 def start_rapbot(model, chat_dictionary, p, device, transformer = False):
     input_sentence = input('User > ')
     input_sentence = input_sentence.lower()
-    input_sentence = format_user_input(input_sentence)
+    # input_sentence = format_user_input(input_sentence)
 
     continue_convo = True
     user_batch = mini_batchify(input_sentence, chat_dictionary, device)
@@ -154,30 +155,26 @@ def start_rapbot(model, chat_dictionary, p, device, transformer = False):
         context += '\n ' + response
 
         user_batch = mini_batchify(context, chat_dictionary, device)
-        # need to test out without context...?
-        # maybe add --feed_context flag to this?
-        # user_batch = mini_batchify(response, chat_dictionary, device)
     return context
 
-
-def bert_bot(model, tokenizer, top_k, top_p, temperature, repetition_penalty):
-    input_sentence = input('User > ')
+def transfer_learning_bot(model, tokenizer, top_k, top_p, repetition_penalty, no_repeat_ngram_size):
+    input_sentence = input('User >> ')
     input_sentence = input_sentence.lower()
-    input_sentence = torch.LongTensor(tokenizer.encode(input_sentence)).unsqueeze(0)
+    context = copy(input_sentence)
+    input_sentence = tokenizer.encode(input_sentence, truncation = True, max_length = 128, return_tensors = 'pt')
     continue_convo = True
     while continue_convo:
-        context = input_sentence.detach().clone()
-        context = tokenizer.decode(input_sentence.squeeze())
-        bot_reply = model.generate(input_sentence, decoder_start_token_id=101, top_k=top_k,
-                                   top_p=top_p, temperature=temperature, repetition_penalty=repetition_penalty)
-        bot_reply = tokenizer.decode(bot_reply.squeeze())
-        bot_reply = format_BERT_ouput(bot_reply)
-        context += bot_reply
+        uni_temp = round(torch.rand(1).clamp(0.1).item(), 2)
+        bot_reply = model.generate(input_sentence, max_length = 512, top_k = top_k, top_p = top_p, temperature = uni_temp, 
+                                   repetition_penalty = repetition_penalty, skip_special_tokens = True,
+                                   no_repeat_ngram_size=no_repeat_ngram_size, pad_token_id = tokenizer.eos_token_id)
+        bot_reply = tokenizer.decode(bot_reply.squeeze()).replace('<|endoftext|>', '')
+        bot_reply = textwrap.fill(bot_reply, 74)
         print(BASH_FORMATTING['YELLOW'] + BASH_FORMATTING['BOLD']  + 'Aubrey: {}'.format(bot_reply) + BASH_FORMATTING['END'])
-        response = input('User > ')
+        response = input('User >> ')
         if (response == 'q' or response == 'quit' or response == 'exit'):
             continue_convo = False
-        context += response
-        input_sentence = torch.LongTensor(tokenizer.encode(context)).unsqueeze(0)
+        input_sentence = tokenizer.encode(response.lower(), truncation= True, max_length = 128, return_tensors = 'pt')
+
 
 
