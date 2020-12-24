@@ -38,11 +38,8 @@ def train():
         model_trainer.train()
 
     else:
-        chat_dict = ChatDictionary('./word_counts_dict.p')
-        vocab = [chat_dict.v2t([idx]) for idx in range(chat_dict.__len__())]
-        model = pretrained_model(args.pretrained_model, len(vocab), args.max_sentence_length, 
-                                 args.num_epochs, args.batch_size, current_device, args.save_dir, 
-                                 args.patience)
+        model = pretrained_model(args.pretrained_model, args.num_epochs, args.batch_size, args.max_sentence_length,
+                                 current_device, args.save_dir, args.patience)
         train_dataset = model.tokenize_data('./train_lyrics.jsonl', args.max_sentence_length)
         valid_dataset = model.tokenize_data('./valid_lyrics.jsonl', args.max_sentence_length, 'valid')
         optimizer = AdamW(model.model.parameters(), lr=args.learning_rate, eps=args.eps,
