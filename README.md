@@ -1,5 +1,5 @@
 # AubreyBot ![aubrey](/assets/IMG_4077.png)
-Create your own chatbot trained on lyrics pulled from [Genius](https://genius.com/)! This project was named after Aubrey "Drake" Graham as his lyrics were the first I chose to bring this chatbot to life. 
+Create your own chatbot trained on lyrics pulled from [Genius](https://genius.com/)! This project was named after Aubrey "Drake" Graham as his lyrics were the first thing that came to mind when seeking source material for bringing this chatbot to life.
 
 **NOTE**: *The goal of this project was not to create a chatbot capable of maintaining conversation but rather to see if I could create a chatbot that retains some of the mannerisms of a musician in question.*
 
@@ -7,7 +7,7 @@ Create your own chatbot trained on lyrics pulled from [Genius](https://genius.co
 ## Getting started
 You'll need Genius API keys in order to collect a musician's lyrics. You can create your own keys [here](https://docs.genius.com/#/getting-started-h1). Make sure to save your generated keys in a file named `genius_keys.py`. Your secret access token must be saved as `GENIUS_ACCESS_TOKEN='YOUR-ACCESS-TOKEN-HERE'` within this file.
 
- Additionally, you'll need access to a GPU in order to train your chatbot. [Google Cloud](https://cloud.google.com/) and [Google Colab](https://colab.research.google.com/notebooks/intro.ipynb) both provide access to GPUs. Colab is free to use while Cloud gives you $300 free credits to use before charging you.
+ Additionally, you'll need access to a GPU in order to train your chatbot. [Google Cloud](https://cloud.google.com/) and [Google Colab](https://colab.research.google.com/notebooks/intro.ipynb) both provide access to GPUs. Colab is free to use while Cloud requires you to sign-up using your credit card but gives you $300 free credits to use before you incur any charges.
 
 ### Install required packages
 Run `pip install -r requirements`
