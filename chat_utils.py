@@ -1,4 +1,5 @@
 import re
+import time
 import textwrap
 from copy import copy
 import torch.nn.functional as F
@@ -127,6 +128,11 @@ def format_BERT_ouput(reply):
         reply = re.sub(r'\[CLS\]|\[PAD\]', '', reply)
     return reply
 
+def bash_format_text(text, *args):
+    formatting = ''
+    for arg in args:
+        formatting += BASH_FORMATTING[arg]
+    return formatting + text + BASH_FORMATTING['END']
 
 def start_rapbot(model, chat_dictionary, p, device, transformer = False):
     input_sentence = input('User > ')
@@ -165,13 +171,14 @@ def transfer_learning_bot(model, tokenizer, max_length, top_k, top_p, repetition
     continue_convo = True
     while continue_convo:
         uni_temp = round(torch.rand(1).clamp(0.1).item(), 2)
+        print(bash_format_text('Typing...', 'YELLOW', 'BOLD'), end='\r' )
         bot_reply = model.generate(input_sentence, max_length = max_length, top_k = top_k, top_p = top_p, temperature = uni_temp, 
                                    repetition_penalty = repetition_penalty, skip_special_tokens = True,
                                    no_repeat_ngram_size=no_repeat_ngram_size, pad_token_id = tokenizer.eos_token_id,
                                    length_penalty=length_penalty)
         bot_reply = tokenizer.decode(bot_reply.squeeze()).replace('<|endoftext|>', '')
-        bot_reply = textwrap.fill(bot_reply, 74)
-        print(BASH_FORMATTING['YELLOW'] + BASH_FORMATTING['BOLD']  + 'Aubrey: {}'.format(bot_reply) + BASH_FORMATTING['END'])
+        bot_reply = textwrap.fill(bot_reply, width=75)
+        print(bash_format_text('Aubrey: {}'.format(bot_reply), 'YELLOW', 'BOLD'))
         response = input('User >> ')
         if (response == 'q' or response == 'quit' or response == 'exit'):
             continue_convo = False
