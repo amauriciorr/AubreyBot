@@ -157,7 +157,7 @@ def start_rapbot(model, chat_dictionary, p, device, transformer = False):
         user_batch = mini_batchify(context, chat_dictionary, device)
     return context
 
-def transfer_learning_bot(model, tokenizer, top_k, top_p, repetition_penalty, no_repeat_ngram_size):
+def transfer_learning_bot(model, tokenizer, max_length, top_k, top_p, repetition_penalty, no_repeat_ngram_size, length_penalty):
     input_sentence = input('User >> ')
     input_sentence = input_sentence.lower()
     context = copy(input_sentence)
@@ -165,9 +165,10 @@ def transfer_learning_bot(model, tokenizer, top_k, top_p, repetition_penalty, no
     continue_convo = True
     while continue_convo:
         uni_temp = round(torch.rand(1).clamp(0.1).item(), 2)
-        bot_reply = model.generate(input_sentence, max_length = 512, top_k = top_k, top_p = top_p, temperature = uni_temp, 
+        bot_reply = model.generate(input_sentence, max_length = max_length, top_k = top_k, top_p = top_p, temperature = uni_temp, 
                                    repetition_penalty = repetition_penalty, skip_special_tokens = True,
-                                   no_repeat_ngram_size=no_repeat_ngram_size, pad_token_id = tokenizer.eos_token_id)
+                                   no_repeat_ngram_size=no_repeat_ngram_size, pad_token_id = tokenizer.eos_token_id,
+                                   length_penalty=length_penalty)
         bot_reply = tokenizer.decode(bot_reply.squeeze()).replace('<|endoftext|>', '')
         bot_reply = textwrap.fill(bot_reply, 74)
         print(BASH_FORMATTING['YELLOW'] + BASH_FORMATTING['BOLD']  + 'Aubrey: {}'.format(bot_reply) + BASH_FORMATTING['END'])
