@@ -15,7 +15,7 @@ Run `pip install -r requirements`
 ### Files explained
 * `setup.py`: handles downloading, preprocessing, and creating both your training and validation datasets. 
 * `build_rapbot.py`: trains your chatbot
-* `Aubrey.py`: used for loading your pretrained model and starting a conversation with your chatbot
+* `Aubrey.py`: for loading your pretrained model and starting a conversation with your chatbot
 * `processing_utils.py`: utilities for downloading and processing your lyrics
 * `chat_utils.py`: utilities for how chatbot generates responses
 
@@ -37,22 +37,26 @@ To start training your chatbot run `python build_rapbot.py`. Files preprocessed 
 
 There are a variety of flags to adjust the neural network training and architecture. To see a full list of flags, simply run `python build_rapbot.py -h`. 
 
-#### FAQ flags
+#### Common flags
 * `--num_epochs`: specify how many epochs to train your model for. This is set to 30 by default.
 * `--batch_size`: number of training examples used in single iteraiton. This is set to 32 by default
 * `learning_rate`: rate at which to adjust weights when doing gradient descent
 * `--save_dir`: directory to save your trained model. By default, this is set to `./models/`. This folder will be created for you if it does not exist.
-* `--use_BERT`: use transfer learning to train your chatbot using BERT2BERT, i.e. use BERT for both encoder and decoder
+* `--pretrained_model`: use transfer learning to train your chatbot using GPT2 or BERT language model heads
 
 ### Talking to Aubrey
 
 To talk to your chatbot, simply run `python Aubrey.py --model_path ./path/to/your/pretrained_model.pt`. 
 
-This will automatically load the model trained from the previous step along with the a pickled dictionary object containing the tokenized vocabulary that was recorded during preprocessing. This latter file is important for converting your chatbot's  output into something that's human-readable. 
+This will automatically load the model trained from the previous step along with the a pickled dictionary object containing the tokenized vocabulary that was recorded during preprocessing. This latter file is important for converting your chatbot's output into something that's human-readable. 
 
-![aubrey_chatlog](/assets/chatting_with_aubrey.gif)
+To load a model fine-tuned through transfer learning, you will need to run `python Aubrey.py --pretrained_model gpt2-medium --model_path ./path/to/fine-tuned/model`
 
-*Above was generated from learning the embedding representation from scratch. Using BERT for transfer learning has yet to yield anything close to a complete thought*
+![drake_seq2seq_chatlog](/assets/drake_seq2seq.gif.gif)
+
+*Above was generated from learning the embedding representation from scratch using seq2seq architecture.*
+![drake_gpt2_chatlog](/assets/drake_gpt2.gif)
+*Transfer learning using GPT2*
 
 To stop talking to Aubrey at any moment, enter `q` or `quit` in the chat. 
 
