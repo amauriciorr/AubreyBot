@@ -58,7 +58,7 @@ To load a model fine-tuned through transfer learning, you will need to run `pyth
 
 ![drake_gpt2_chatlog](/assets/drake_gpt2.gif) 
 
-*Above example uses transfer learning through GPT2*
+*Above example uses transfer learning with GPT2*
 
 We observe that the seq2seq approach produces curt, unrelated (albeit entertaining) responses. On the otherhand, using the transfer learning approach with GPT2 results in Aubrey being able to produce small verses. Based on an input, Aubrey finishes the lyric. 
 
