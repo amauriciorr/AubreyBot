@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, TensorDataset, RandomSampler
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from torch.optim.lr_scheduler import StepLR
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, AdamW
+from transformers import AutoModelForPreTraining, AutoTokenizer, AdamW
 
 # from processing_utils import RETOK
 # commented above, added below to run on GCP without needing to import
@@ -447,13 +447,15 @@ class seq2seqTrainer:
 class pretrained_model(object):
     def __init__(self, model_name, num_epochs, batch_size, sentence_length, device, models_dir, patience=5):
         self.model_name = model_name
-        self.model = GPT2LMHeadModel.from_pretrained('gpt2-medium')
+        # self.model = GPT2LMHeadModel.from_pretrained('gpt2-medium')
+        self.model = AutoModelForPreTraining.from_pretrained(model_name)
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.device = device
         self.models_dir = models_dir
         self.patience = patience
-        self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
+        # self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     def tokenize_data(self, dataset_file_path, max_sentence_length, stage='train'):
         json_text = open(dataset_file_path, 'r').readlines()
@@ -464,10 +466,12 @@ class pretrained_model(object):
         for sample in tqdm(json_text):
             sample = json.loads(sample)
             if stage == 'valid':
-                encoded_label = self.tokenizer.encode(sample['eval_labels'], padding = 'max_length', 
+                label = sample['text'] + ' ' + sample['eval_labels']
+                encoded_label = self.tokenizer.encode(label, padding = 'max_length', 
                                                       truncation = True, max_length = max_sentence_length)
             else:
-                encoded_label = self.tokenizer.encode(sample['labels'], padding = 'max_length', 
+                label = sample['text'] + ' ' + sample['labels']
+                encoded_label = self.tokenizer.encode(label, padding = 'max_length', 
                                                       truncation = True, max_length = max_sentence_length)
             encoded = self.tokenizer.encode_plus(sample['text'], padding = 'max_length',
                                                  max_length = max_sentence_length, truncation = True)
@@ -485,8 +489,8 @@ class pretrained_model(object):
         for step, batch in enumerate(train_loader):
             batch = tuple(t.to(self.device) for t in batch)
             input_ids, attention_masks, labels = batch
-            loss = model(input_ids, labels = input_ids, attention_mask = attention_masks)[0]
-            # loss = model(input_ids, labels = labels, attention_mask = attention_masks)[0]
+            # loss = model(input_ids, labels = input_ids, attention_mask = attention_masks)[0]
+            loss = model(input_ids, labels = labels, attention_mask = attention_masks)[0]
 
             loss_set.append(loss.item())
             loss.backward()
@@ -502,8 +506,8 @@ class pretrained_model(object):
         for step, batch in enumerate(val_loader):
             batch = tuple(t.to(self.device) for t in batch)
             input_ids, attention_masks, labels = batch
-            loss = model(input_ids, labels = input_ids, attention_mask = attention_masks)[0]
-            # loss = model(input_ids, labels = labels, attention_mask = attention_masks)[0]
+            # loss = model(input_ids, labels = input_ids, attention_mask = attention_masks)[0]
+            loss = model(input_ids, labels = labels, attention_mask = attention_masks)[0]
             val_loss_set.append(loss.item())
         avg_val_loss = np.mean(val_loss_set)
         val_ppl = calculate_perplexity(avg_val_loss)
