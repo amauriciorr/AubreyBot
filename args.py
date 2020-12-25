@@ -31,7 +31,7 @@ def get_train_args():
     parser.add_argument('--pretrained_model',
                         type=str,
                         default=None,
-                        help='Model to use for transfer learning. Currently \'BERT\' and \'GPT2\' are supported.')
+                        help='LM model head to use for transfer learning, e.g. gpt2-medium')
     parser.add_argument('--num_epochs',
                         type=int,
                         default=30,
@@ -116,7 +116,8 @@ def get_chat_args():
     parser.add_argument('--pretrained_model',
                         type=str,
                         default=None,
-                        help='Load pretrained model architecture for chatbot. Currently \'BERT\' and \'GPT2\' are supported')
+                        help='Load pretrained model architecture for chatbot. Currently \
+                              \'BERT\' and \'GPT2\' are supported')
     parser.add_argument('--repetition_penalty',
                         type=float,
                         default=1.0,
@@ -141,6 +142,16 @@ def get_chat_args():
     parser.add_argument('--model_path',
                         type=str,
                         help='Specify path to trained chatbot model.')
+    parser.add_argument('--length_penalty',
+                        type=float,
+                        default=1.0,
+                        help='Exponential penalty to the length. 1.0 means no penalty. Set to values\
+                              < 1.0 in order to encourage the model to generate shorter sequences, to \
+                              a value > 1.0 in order to encourage the model to produce longer sequences.')
+    parser.add_argument('--max_sentence_length',
+                        type=int,
+                        default=512,
+                        help='The maximum length of the sequence to be generated.')
     parser.add_argument('--vocab_path',
                         type=str,
                         default='./word_counts_dict.p',
