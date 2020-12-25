@@ -20,8 +20,9 @@ if __name__ == '__main__':
         chatbot.eval()
         start_rapbot(chatbot, chat_dict, chatbot_args.top_p, current_device, transformer = False)
     else:
-        chatbot = GPT2LMHeadModel.from_pretrained(chatbot_args.model_path)
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
+        chatbot = AutoModelForPreTraining.from_pretrained(chatbot_args.model_path)
+        tokenizer = AutoTokenizer.from_pretrained(chatbot_args.pretrained_model)
         tokenizer.pad_token = tokenizer.eos_token
-        transfer_learning_bot(chatbot, tokenizer, chatbot_args.top_k, chatbot_args.top_p,
-                              chatbot_args.repetition_penalty, chatbot_args.no_repeat_ngram_size)
+        transfer_learning_bot(chatbot, tokenizer, chatbot_args.max_sentence_length,
+                              chatbot_args.top_k, chatbot_args.top_p, chatbot_args.repetition_penalty,
+                              chatbot_args.no_repeat_ngram_size, chatbot_args.length_penalty)
