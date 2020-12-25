@@ -52,7 +52,7 @@ This will automatically load the model trained from the previous step along with
 
 To load a model fine-tuned through transfer learning, you will need to run `python Aubrey.py --pretrained_model gpt2-medium --model_path ./path/to/fine-tuned/model`
 
-![drake_seq2seq_chatlog](/assets/drake_seq2seq.gif.gif)
+![drake_seq2seq_chatlog](/assets/drake_seq2seq.gif)
 
 *Above was generated from learning the embedding representation from scratch using seq2seq architecture.*
 ![drake_gpt2_chatlog](/assets/drake_gpt2.gif)
