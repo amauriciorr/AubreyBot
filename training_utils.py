@@ -3,7 +3,7 @@ import json
 import pytz
 import torch
 import numpy as np
-import datetime as dt
+from datetime import datetime
 from copy import copy
 import pickle as pkl
 from tqdm import tqdm
@@ -395,7 +395,7 @@ class seq2seqTrainer:
             optimizer.step()
             avg_train_loss = sum_loss / sum_tokens
             if step % 100 == 0:
-                print(STEP_LOG.format(dt.datetime.now(tz=TIMEZONE), calculate_perplexity(avg_train_loss), step, len(self.train_dataloader)))
+                print(STEP_LOG.format(datetime.now(tz=TIMEZONE), calculate_perplexity(avg_train_loss), step, len(self.train_dataloader)))
 
     def validation_step(self, valid_loader, best_val_loss, epoch):
         val_tokens = 0
@@ -417,7 +417,7 @@ class seq2seqTrainer:
         avg_val_loss = val_loss / val_tokens
         val_ppl = calculate_perplexity(avg_val_loss)
         self.scheduler.step(avg_val_loss)
-        print('{} | Validation perplexity achieved: {:.4}'.format(dt.datetime.now(tz=TIMEZONE), val_ppl))
+        print('{} | Validation perplexity achieved: {:.4}'.format(datetime.now(tz=TIMEZONE), val_ppl))
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
@@ -431,7 +431,7 @@ class seq2seqTrainer:
         loss_set = []
         patience_counter = 0
         for epoch in range(self.num_epochs):
-            print(EPOCH_LOG.format(dt.datetime.now(tz=TIMEZONE), (epoch + 1), self.num_epochs))
+            print(EPOCH_LOG.format(datetime.now(tz=TIMEZONE), (epoch + 1), self.num_epochs))
             self.model.train()
             self.train_step(self.train_dataloader, self.optimizer)
             previous_val_loss = best_val_loss
@@ -497,7 +497,7 @@ class pretrained_model(object):
             optimizer.step()
             avg_train_loss = np.mean(loss_set)
             if step % 100 == 0:
-                print(VERBOSE_STEP_LOG.format(dt.datetime.now(tz=TIMEZONE), avg_train_loss, 
+                print(VERBOSE_STEP_LOG.format(datetime.now(tz=TIMEZONE), avg_train_loss, 
                       calculate_perplexity(avg_train_loss), step, len(train_loader)))
 
     def validation_step(self, model, val_loader, best_val_loss, epoch):
@@ -511,7 +511,7 @@ class pretrained_model(object):
             val_loss_set.append(loss.item())
         avg_val_loss = np.mean(val_loss_set)
         val_ppl = calculate_perplexity(avg_val_loss)
-        print('{} | Validation perplexity achieved: {:.4}'.format(dt.datetime.now(tz=TIMEZONE), val_ppl))
+        print('{} | Validation perplexity achieved: {:.4}'.format(datetime.now(tz=TIMEZONE), val_ppl))
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             formatted_ppl = format_perplexity(val_ppl)
@@ -533,7 +533,7 @@ class pretrained_model(object):
         patience_counter = 0
 
         for epoch in range(self.num_epochs):
-            print(EPOCH_LOG.format(dt.datetime.now(tz=TIMEZONE), (epoch + 1), self.num_epochs))
+            print(EPOCH_LOG.format(datetime.now(tz=TIMEZONE), (epoch + 1), self.num_epochs))
             self.model.train()
             self.train_step(self.model, train_dataloader, optimizer)
             previous_val_loss = best_val_loss
