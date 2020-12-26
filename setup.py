@@ -3,7 +3,7 @@ import pickle as pkl
 from datetime import datetime
 from lyricsgenius.utils import sanitize_filename
 from processing_utils import *
-from args import get_setup_arg
+from args import get_setup_args
 from training_utils import TIMEZONE
 
 def get_and_process_songs(args):
@@ -29,7 +29,13 @@ def get_and_process_songs(args):
         artist_tracks.save_lyrics()
 
     if args.load_path:
-        genius_file = read_json(args.load_path)
+        if os.path.isdir(args.load_path):
+            print('{}| Preparing mixed lyrics files'.format(datetime.now(tz=TIMEZONE)))
+            text_and_target_from_dir(args.load_path, args.lookback)
+            print('{}| Finished.'.format(datetime.now(tz=TIMEZONE)))
+            sys.exit()
+        else:
+            genius_file = read_json(args.load_path)
     else:
         genius_file = read_json('./'+stock_filename)
 
