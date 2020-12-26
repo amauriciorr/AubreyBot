@@ -1,8 +1,10 @@
 import sys
 import pickle as pkl
+from datetime import datetime
 from lyricsgenius.utils import sanitize_filename
 from processing_utils import *
-from args import get_setup_args
+from args import get_setup_arg
+from training_utils import TIMEZONE
 
 def get_and_process_songs(args):
     if args.artist_name is None and args.download_lyrics:
@@ -12,7 +14,7 @@ def get_and_process_songs(args):
         sys.exit()
 
     if args.download_lyrics:
-        start = dt.datetime.now()
+        start = datetime.now(tz=TIMEZONE)
         stock_filename = 'Lyrics_' + args.artist_name.replace(' ', '') + '.json'
         stock_filename = sanitize_filename(stock_filename)
         print('{}| Beginning download'.format(start))
@@ -22,7 +24,8 @@ def get_and_process_songs(args):
                                             sort='popularity', per_page=20,
                                             get_full_info=True,
                                             allow_name_change=True)
-        print('{}| Finished download in {}'.format(dt.datetime.now(), (dt.datetime.now() - start)))
+        print('{}| Finished download in {}'.format(datetime.now(tz=TIMEZONE), 
+                                                   datetime.now(tz=TIMEZONE) - start))
         artist_tracks.save_lyrics()
 
     if args.load_path:
