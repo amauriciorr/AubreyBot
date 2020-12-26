@@ -24,5 +24,4 @@ if __name__ == '__main__':
         tokenizer = AutoTokenizer.from_pretrained(chatbot_args.pretrained_model)
         tokenizer.pad_token = tokenizer.eos_token
         transfer_learning_bot(chatbot, tokenizer, chatbot_args.max_sentence_length,
-                              chatbot_args.top_k, chatbot_args.top_p, chatbot_args.repetition_penalty,
-                              chatbot_args.no_repeat_ngram_size, chatbot_args.length_penalty)
+                              chatbot_args.top_k, chatbot_args.top_p)
