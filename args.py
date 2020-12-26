@@ -118,11 +118,6 @@ def get_chat_args():
                         default=None,
                         help='Load pretrained model architecture for chatbot. Currently \
                               \'BERT\' and \'GPT2\' are supported')
-    parser.add_argument('--repetition_penalty',
-                        type=float,
-                        default=1.0,
-                        help='Penalized sampling parameter, i.e. discount scores of previously \
-                              generated tokens')
     parser.add_argument('--temperature',
                         type=float,
                         default=1.0,
@@ -135,10 +130,6 @@ def get_chat_args():
                         type=int,
                         default=50,
                         help='Number of highest probability vocabulary tokens to keep.')
-    parser.add_argument('--no_repeat_ngram_size',
-                        type=int,
-                        default=0,
-                        help='N-gram of specified size can only occur once.')
     parser.add_argument('--model_path',
                         type=str,
                         help='Specify path to trained chatbot model.')
@@ -150,7 +141,7 @@ def get_chat_args():
                               a value > 1.0 in order to encourage the model to produce longer sequences.')
     parser.add_argument('--max_sentence_length',
                         type=int,
-                        default=512,
+                        default=64,
                         help='The maximum length of the sequence to be generated.')
     parser.add_argument('--vocab_path',
                         type=str,
