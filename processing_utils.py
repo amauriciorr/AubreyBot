@@ -3,7 +3,6 @@ import json
 import argparse
 import jsonlines
 import pickle as pkl
-import datetime as dt
 import lyricsgenius
 from lyricsgenius.api import *
 from collections import defaultdict
