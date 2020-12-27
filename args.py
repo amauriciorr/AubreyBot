@@ -10,6 +10,10 @@ def get_setup_args():
                         default=True,
                         help='If lyrics JSON file already created, avoid downloading and start with\
                               building vocab and tokenizing.')
+    parser.add_argument('--download_only',
+                        type=lambda s: s.lower().startswith('t'),
+                        default=False,
+                        help='Forgo preprocessing dataset, only download Genius lyrics.')
     parser.add_argument('--load_path',
                         type=str,
                         default=None,
