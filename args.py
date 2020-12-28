@@ -38,7 +38,7 @@ def get_train_args():
                         help='LM model head to use for transfer learning, e.g. gpt2-medium')
     parser.add_argument('--num_epochs',
                         type=int,
-                        default=30,
+                        default=5,
                         help='Number of epochs to train model.')
     parser.add_argument('--learning_rate',
                         type=float,
