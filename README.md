@@ -32,7 +32,7 @@ Alternatively, if you've already pulled lyrics through Genius' API, you can run
 
 
 ### Training Aubrey
-To start training your chatbot run `python build_rapbot.py`. Files preprocessed in the previous step will automatically be read. 
+To start training your chatbot run `python build_rapbot.py`. Files preprocessed in the previous step will automatically be read. Alternatively, if you'd like to take the transfer learning approach, you'll need to run `python build_rapbot.py --pretrained_model gpt2-medium`. (The choice of `gpt2-medium` was arbitrary. You can feel free to use any size GPT2 or BERT LM head.)
 
 
 There are a variety of flags to adjust the neural network training and architecture. To see a full list of flags, simply run `python build_rapbot.py -h`. 
