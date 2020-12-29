@@ -38,7 +38,7 @@ To start training your chatbot run `python build_rapbot.py`. Files preprocessed 
 There are a variety of flags to adjust the neural network training and architecture. To see a full list of flags, simply run `python build_rapbot.py -h`. 
 
 #### Common flags
-* `--num_epochs`: specify how many epochs to train your model for. This is set to 30 by default.
+* `--num_epochs`: specify how many epochs to train your model for. This is set to 5 by default.
 * `--batch_size`: number of training examples used in single iteraiton. This is set to 32 by default
 * `learning_rate`: rate at which to adjust weights when doing gradient descent
 * `--save_dir`: directory to save your trained model. By default, this is set to `./models/`. This folder will be created for you if it does not exist.
