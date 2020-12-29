@@ -42,7 +42,7 @@ There are a variety of flags to adjust the neural network training and architect
 * `--batch_size`: number of training examples used in single iteraiton. This is set to 32 by default
 * `learning_rate`: rate at which to adjust weights when doing gradient descent
 * `--save_dir`: directory to save your trained model. By default, this is set to `./models/`. This folder will be created for you if it does not exist.
-* `--pretrained_model`: use pretrained model in transfer learning approach to fine-tune your chatbot. e.g. GPT2 or BERT language model heads (`gpt`, `bert-base-uncased`)
+* `--pretrained_model`: use pretrained model in transfer learning approach to fine-tune your chatbot. e.g. GPT2 or BERT language model heads (`gpt2`, `bert-base-uncased`)
 
 ### Talking to Aubrey
 
