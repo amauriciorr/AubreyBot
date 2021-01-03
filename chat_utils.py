@@ -78,11 +78,13 @@ def nucleus_sample(model, input_tensor, chat_dictionary, top_p, device, make_bat
                     total_done += 1
         if total_done == bsz:
             break
-
     predictions = torch.cat(predictions, dim = -1)
     return predictions, log_prob
 
 def mini_batchify(sentence, chat_dictionary, device):
+    """
+    function to mimic batch function on smaller scale
+    """
     RETOK = re.compile(r'\w+|[^\w\s]|\n', re.UNICODE)
     sentence =  RETOK.findall(sentence)
     batch = {
@@ -93,6 +95,9 @@ def mini_batchify(sentence, chat_dictionary, device):
     return batch
 
 def format_chatbot_output(reply):
+    """
+    function for making seq2seq chatbot output more human readable
+    """
     i_am = "i ' m"
     contraction = "n ' t "
     possessive = " ' s "
@@ -122,12 +127,6 @@ def format_user_input(reply):
         reply = re.sub(r'\?', ' ? ', reply)
     return reply
 
-def format_BERT_ouput(reply):
-    if re.search(r'\[SEP\]|\[CLS\]|\[PAD\]', reply):
-        reply = re.sub(r'\s?\[SEP\]\s?', '.', reply)
-        reply = re.sub(r'\[CLS\]|\[PAD\]', '', reply)
-    return reply
-
 def bash_format_text(text, *args):
     formatting = ''
     for arg in args:
@@ -135,35 +134,35 @@ def bash_format_text(text, *args):
     return formatting + text + BASH_FORMATTING['END']
 
 def start_rapbot(model, chat_dictionary, p, device, transformer = False):
+    """
+    for chatting with seq2seq chatbot
+    """
     input_sentence = input('User > ')
     input_sentence = input_sentence.lower()
-    # input_sentence = format_user_input(input_sentence)
+    input_sentence = format_user_input(input_sentence)
 
     continue_convo = True
     user_batch = mini_batchify(input_sentence, chat_dictionary, device)
 
     while continue_convo:
         context = chat_dictionary.v2t(user_batch['text_vecs'][0].tolist())
-
         decoded_sent, _ = nucleus_sample(model, user_batch, chat_dictionary, p, device, False, transformer)
-
         bot_reply = decoded_sent[0][1:-1]
         bot_reply_readable = chat_dictionary.v2t(bot_reply.tolist())
         bot_reply_readable = format_chatbot_output(bot_reply_readable)
         print(BASH_FORMATTING['YELLOW'] + BASH_FORMATTING['BOLD']  + 'Aubrey: {}'.format(bot_reply_readable) + BASH_FORMATTING['END'])
-        
         context += '\n ' + bot_reply_readable
-
         response = input('User > ')
         if (response == 'q' or response == 'quit' or response == 'exit'):
             continue_convo = False
-
         context += '\n ' + response
-
         user_batch = mini_batchify(context, chat_dictionary, device)
     return context
 
 def transfer_learning_bot(model, tokenizer, max_length, top_k, top_p):
+    """
+    for chatbot trained using transfer learning
+    """
     input_sentence = input('User >> ')
     input_sentence = input_sentence.lower()
     context = copy(input_sentence)
@@ -185,6 +184,3 @@ def transfer_learning_bot(model, tokenizer, max_length, top_k, top_p):
         if (response == 'q' or response == 'quit' or response == 'exit'):
             continue_convo = False
         input_sentence = tokenizer.encode(response.lower(), truncation= True, max_length = 128, return_tensors = 'pt')
-
-
-
