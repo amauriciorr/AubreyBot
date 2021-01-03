@@ -82,9 +82,9 @@ def nucleus_sample(model, input_tensor, chat_dictionary, top_p, device, make_bat
     return predictions, log_prob
 
 def mini_batchify(sentence, chat_dictionary, device):
-    """
+    '''
     function to mimic batch function on smaller scale
-    """
+    '''
     RETOK = re.compile(r'\w+|[^\w\s]|\n', re.UNICODE)
     sentence =  RETOK.findall(sentence)
     batch = {
@@ -95,9 +95,9 @@ def mini_batchify(sentence, chat_dictionary, device):
     return batch
 
 def format_chatbot_output(reply):
-    """
+    '''
     function for making seq2seq chatbot output more human readable
-    """
+    '''
     i_am = "i ' m"
     contraction = "n ' t "
     possessive = " ' s "
@@ -134,9 +134,9 @@ def bash_format_text(text, *args):
     return formatting + text + BASH_FORMATTING['END']
 
 def start_rapbot(model, chat_dictionary, p, device, transformer = False):
-    """
+    '''
     for chatting with seq2seq chatbot
-    """
+    '''
     input_sentence = input('User > ')
     input_sentence = input_sentence.lower()
     input_sentence = format_user_input(input_sentence)
@@ -160,9 +160,9 @@ def start_rapbot(model, chat_dictionary, p, device, transformer = False):
     return context
 
 def transfer_learning_bot(model, tokenizer, max_length, top_k, top_p):
-    """
+    '''
     for chatbot trained using transfer learning
-    """
+    '''
     input_sentence = input('User >> ')
     input_sentence = input_sentence.lower()
     context = copy(input_sentence)
