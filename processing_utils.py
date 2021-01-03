@@ -39,6 +39,11 @@ def create_counts_dict(json_file, regex):
     return word_count_dict
 
 def combine_counts(counts_list):
+    '''
+    function for combining pickled word counts. only applies 
+    when training chatbot that uses lyrics from more than
+    one artist. see text_and_target_from_dir()
+    '''
     counts = {}
     for count in counts_list:
         for word in count:
@@ -52,6 +57,9 @@ def combine_counts(counts_list):
     pkl.dump(counts, open('word_counts_mixed_dict.p', 'wb'))
 
 def to_exclude(word):
+    '''
+    remove troublesome characters/words from lyrics
+    '''
     blacklisted = [' ', '', '\'', '\"', '\xa0', '\n', '\t']
     blacklisted += ['.', ]
     whitespace = re.compile(r'^\s{2,}')
@@ -63,7 +71,8 @@ def to_exclude(word):
 def get_lyrics_from_json(json_file, regex):
     '''
     iterate through Genius JSON file and retrieve
-    lyrics. remove song-part designation
+    lyrics. attempt to remove song-part designation,
+    e.g. [INTRO] or [CHORUS]
     '''
     songs = []
     all_lyrics = []
