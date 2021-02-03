@@ -172,7 +172,7 @@ def format_perplexity(ppl):
         formatted_output = '_perplexity_inf'
     return formatted_output
 
-# encoder, decoder, and attention layer used here 
+# Encoder, Decoder, and AttentionLayer classes below 
 # were implemented by DS-GA1011 instructors 
 
 class EncoderRNN(nn.Module):
