@@ -546,4 +546,3 @@ class pretrained_model(object):
             else:
                 patience_counter += 1
         scheduler.step()
-
