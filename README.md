@@ -45,7 +45,9 @@ There are a variety of flags to adjust the neural network training and architect
 ### Talking to Aubrey
 
 To talk to your chatbot, simply run 
-```python Aubrey.py --pretrained_model model_name --model_path ./path/to/fine-tuned/model```
+```
+python Aubrey.py --pretrained_model model_name --model_path ./path/to/fine-tuned/model
+```
 
 ![drake_seq2seq_chatlog](/assets/drake_seq2seq.gif) 
 
