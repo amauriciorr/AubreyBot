@@ -44,11 +44,7 @@ There are a variety of flags to adjust the neural network training and architect
 
 ### Talking to Aubrey
 
-To talk to your chatbot, simply run `python Aubrey.py --model_path ./path/to/your/pretrained_model.pt`. 
-
-This will automatically load the model trained from the previous step along with the a pickled dictionary object containing the tokenized vocabulary that was recorded during preprocessing. This latter file is important for converting your chatbot's output into something that's human-readable. 
-
-To load a model fine-tuned through transfer learning, you will need to run `python Aubrey.py --pretrained_model gpt2-medium --model_path ./path/to/fine-tuned/model`
+To talk to your chatbot, simply run `python Aubrey.py --pretrained_model model_name --model_path ./path/to/fine-tuned/model`
 
 ![drake_seq2seq_chatlog](/assets/drake_seq2seq.gif) 
 
