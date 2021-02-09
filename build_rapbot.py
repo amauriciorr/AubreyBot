@@ -18,33 +18,13 @@ def train():
         logger.addHandler(logging.FileHandler(log_filename+'.log', 'a'))
         print = logger.info
 
-    if not args.pretrained_model:
-        chat_dict = ChatDictionary('./word_counts_dict.p')
-        train_dataset = ChatDataset(chat_dict, './train_lyrics.jsonl')
-        valid_dataset = ChatDataset(chat_dict, './valid_lyrics.jsonl', 'valid')
-        train_dataloader = build_dataloader(train_dataset, batchify, args.batch_size)
-        valid_dataloader = build_dataloader(valid_dataset, batchify, args.batch_size,
-                                            shuffle=False)
-        opts = set_model_config(chat_dict, args.hidden_size, args.embedding_size,
-                                args.num_layers_enc, args.num_layers_dec,
-                                args.dropout)
-        model = seq2seq(opts)
-        model.to(current_device)
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, 
-                                     weight_decay=args.weight_decay, amsgrad=True)
-        model_trainer = seq2seqTrainer(model, train_dataloader, valid_dataloader, criterion,
-                                       optimizer, args.num_epochs, args.patience, current_device, 
-                                       args.save_dir)
-        model_trainer.train()
-
-    else:
-        model = pretrained_model(args.pretrained_model, args.num_epochs, args.batch_size, args.max_sentence_length,
-                                 current_device, args.save_dir, args.patience)
-        train_dataset = model.tokenize_data('./train_lyrics.jsonl', args.max_sentence_length)
-        valid_dataset = model.tokenize_data('./valid_lyrics.jsonl', args.max_sentence_length, 'valid')
-        optimizer = AdamW(model.model.parameters(), lr=args.learning_rate, eps=args.eps,
-                          weight_decay=args.weight_decay)
-        model.train(train_dataset, valid_dataset, optimizer, args.step_size, args.gamma)     
+    model = pretrained_model(args.pretrained_model, args.num_epochs, args.batch_size, args.max_sentence_length,
+                             current_device, args.save_dir, args.patience)
+    train_dataset = model.tokenize_data('./train_lyrics.jsonl', args.max_sentence_length)
+    valid_dataset = model.tokenize_data('./valid_lyrics.jsonl', args.max_sentence_length, 'valid')
+    optimizer = AdamW(model.model.parameters(), lr=args.learning_rate, eps=args.eps,
+                      weight_decay=args.weight_decay)
+    model.train(train_dataset, valid_dataset, optimizer, args.step_size, args.gamma)     
 
 if __name__ == "__main__":
     train()

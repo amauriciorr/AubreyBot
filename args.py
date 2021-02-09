@@ -54,30 +54,6 @@ def get_train_args():
                         type=int,
                         default=32,
                         help='Size of batch, i.e. size of data partitions')
-    parser.add_argument('--hidden_size',
-                        type=int,
-                        default=512,
-                        help='The number of features in the hidden state h, i.e. the number of\
-                         nodes or neurons in the hidden layer')
-    parser.add_argument('--embedding_size',
-                        type=int,
-                        default=256,
-                        help='Vector size for embedding representation, i.e. dimension of embedding\
-                              vector.')
-    parser.add_argument('--num_layers_enc',
-                        type=int,
-                        default=2,
-                        help='Number of recurrent layers, e.g. a value of 2 would mean stacking two\
-                              GRUs together')
-    parser.add_argument('--num_layers_dec',
-                        type=int,
-                        default=2,
-                        help='Number of recurrent layers, e.g. a value of 2 would mean stacking two\
-                              GRUs together')
-    parser.add_argument('--dropout',
-                        type=int,
-                        default=0.3,
-                        help='Percentage of nodes to randomly ignore as part of Dropout method.')
     parser.add_argument('--eps',
                         type=float,
                         default=1e-08,
@@ -147,12 +123,6 @@ def get_chat_args():
                         type=int,
                         default=64,
                         help='The maximum length of the sequence to be generated.')
-    parser.add_argument('--vocab_path',
-                        type=str,
-                        default='./word_counts_dict.p',
-                        help='Specify path for ChatDictionary object. NOTE: this is not used with\
-                              BERT. This is for when you\'ve trained your own embedding representation.')
-    # add argument for toggling nucleus sample vs beam search
    
     args = parser.parse_args()
     return args

@@ -1,7 +1,5 @@
 # AubreyBot ![aubrey](/assets/IMG_4077.png)
-Create your own chatbot trained on lyrics pulled from [Genius](https://genius.com/)! This project was named after Aubrey "Drake" Graham as his lyrics were the first thing that came to mind when seeking source material for bringing this chatbot to life.
-
-**NOTE**: *The goal of this project was not to create a chatbot capable of maintaining conversation but rather to see if I could create a chatbot that retains some of the mannerisms of a musician in question.*
+Create your own ghostwriting bot on lyrics pulled from [Genius](https://genius.com/)! This project was named after Aubrey "Drake" Graham as his lyrics were the first thing that came to mind when seeking source material for bringing this chatbot to life.
 
 
 ## Getting started
