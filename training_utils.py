@@ -22,6 +22,25 @@ STEP_LOG = '{} | Perplexity {:.4} | Step {} / {}'
 VERBOSE_STEP_LOG = '{} | Avg. Loss : {:.4} | Perplexity {:.4} | Step {} / {}'
 TIMEZONE = pytz.timezone('America/New_York')
 
+def calculate_perplexity(ce_loss):
+    '''
+    perplexity is essentially the exponentiation of entropy. it is a metric
+    inversely proportional to the probability that the model assigns to a set of sequences; 
+    i.e. a measurement of how well a probability model predicts a sample. intuitively, 
+    perplexity measures the average rank of the true next-token, when tokens are ordered 
+    by the model's conditional probabilities
+    '''  
+    perplexity = float(2**(ce_loss/np.log(2)))
+    return perplexity
+
+def format_perplexity(ppl):
+    try:
+        whole, dec = str(round(ppl, 10)).split('.')
+        formatted_output = '_perplexity_' + whole + '-' + dec
+    except:
+        formatted_output = '_perplexity_inf'
+    return formatted_output
+
 class pretrained_model(object):
     def __init__(self, model_name, num_epochs, batch_size, sentence_length, device, models_dir, patience=5):
         self.model_name = model_name
