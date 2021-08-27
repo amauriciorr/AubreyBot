@@ -82,13 +82,13 @@ class pretrained_model(object):
 
     def train_step(self, model, train_loader, optimizer):
         loss_set = []
-        optimizer.zero_grad()
+        
         for step, batch in enumerate(train_loader):
             batch = tuple(t.to(self.device) for t in batch)
             input_ids, attention_masks, labels = batch
             # loss = model(input_ids, labels = input_ids, attention_mask = attention_masks)[0]
             loss = model(input_ids, labels = labels, attention_mask = attention_masks)[0]
-
+            optimizer.zero_grad()
             loss_set.append(loss.item())
             loss.backward()
             optimizer.step()

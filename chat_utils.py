@@ -18,6 +18,12 @@ BASH_FORMATTING = {
                    'END': '\033[0m'
 }
 
+def bash_format_text(text, *args):
+    formatting = ''
+    for arg in args:
+        formatting += BASH_FORMATTING[arg]
+    return formatting + text + BASH_FORMATTING['END']
+
 def transfer_learning_bot(model, tokenizer, max_length, top_k, top_p):
     '''
     for chatbot trained using transfer learning
