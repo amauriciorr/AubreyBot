@@ -1,5 +1,5 @@
 # AubreyBot ![aubrey](/assets/IMG_4077.png)
-Create your own ghostwriting bot on lyrics pulled from [Genius](https://genius.com/)! This project was named after Aubrey "Drake" Graham as his lyrics were the first thing that came to mind when seeking source material for bringing this chatbot to life.
+Create your own ghostwriting bot trained on any musician's lyrics pulled from [Genius](https://genius.com/)! This project was named after Aubrey "Drake" Graham as his lyrics were the first thing that came to mind when seeking source material for bringing this chatbot to life.
 
 
 ## Getting started
