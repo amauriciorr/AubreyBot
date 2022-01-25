@@ -24,6 +24,8 @@ def bash_format_text(text, *args):
         formatting += BASH_FORMATTING[arg]
     return formatting + text + BASH_FORMATTING['END']
 
+# maybe add do_sample ?
+# randomly select one of two values that evaluate to true or false lols hehehe 
 def transfer_learning_bot(model, tokenizer, max_length, top_k, top_p):
     '''
     for chatbot trained using transfer learning
