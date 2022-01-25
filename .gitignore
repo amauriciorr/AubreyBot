@@ -6,3 +6,5 @@ pickled_files/
 seq2seq/
 lyrics/
 models/
+# avoid sharing my personal key
+genius_keys.py
