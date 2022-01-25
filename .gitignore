@@ -1,0 +1,8 @@
+__pycache__/
+.ipynb_checkpoints
+.DS_Store
+pickled_files/
+# below directory is for seq2seq chatbot, which performs less effectivelys
+seq2seq/
+lyrics/
+models/
