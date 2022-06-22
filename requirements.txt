@@ -3,4 +3,4 @@ transformers==3.3.0
 torch==1.2.0
 lyricsgenius==1.8.1
 argparse
-numpy==1.16.4
+numpy==1.22.0
